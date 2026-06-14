@@ -1,0 +1,49 @@
+{
+  "name": "circuit41",
+  "version": "1.0.1",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-google-signin/google-signin": "^16.1.2",
+    "@react-navigation/bottom-tabs": "^7.15.9",
+    "@react-navigation/native": "^7.2.1",
+    "@react-navigation/native-stack": "^7.14.9",
+    "@stripe/stripe-react-native": "^0.63.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "expo": "^55.0.9",
+    "expo-apple-authentication": "~55.0.13",
+    "expo-build-properties": "~55.0.13",
+    "expo-clipboard": "~55.0.9",
+    "expo-crypto": "~55.0.12",
+    "expo-dev-client": "~55.0.30",
+    "expo-document-picker": "~55.0.11",
+    "expo-file-system": "~55.0.14",
+    "expo-font": "~55.0.4",
+    "expo-image-picker": "~55.0.16",
+    "expo-sharing": "~55.0.16",
+    "expo-status-bar": "55.0.5-canary-20260327-0789fbc",
+    "jsonwebtoken": "^9.0.3",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "^0.83.4",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "puppeteer-core": "^24.43.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

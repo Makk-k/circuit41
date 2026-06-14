@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Circuit 41",
+    "displayName": "Circuit 41",
+    "slug": "circuit41",
+    "scheme": "circuit41",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/circuit40s icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F6F0"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.circuit40s.circuit41app",
+      "buildNumber": "7",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Circuit needs access to your photo library to upload shipment documents and payment proof.",
+        "NSPhotoLibraryAddUsageDescription": "Circuit needs access to save photos.",
+        "NSCameraUsageDescription": "Circuit needs camera access to take photos of shipment documents.",
+        "LSApplicationQueriesSchemes": [
+          "circuit41"
+        ]
+      },
+      "appleTeamId": "7B3AQARYKN"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.circuit40s.circuit41"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.668086573862-gaj0jemha74ah3mdmpphfvaasb7bp"
+        }
+      ],
+      "expo-sharing",
+      "expo-image-picker",
+      "expo-document-picker",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "enableGooglePay": true
+        }
+      ],
+      "expo-build-properties"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "22a7a2e4-4ee9-4d30-919b-01c687e3bd95"
+      }
+    },
+    "owner": "makk55"
+  }
+}
