@@ -8,3 +8,15 @@ ios/build/
 android/build/
 supabase/.temp/
 .DS_Store
+AuthKey*.p8
+*.p8
+
+# Secrets / auth keys
+*.p8
+AuthKey*.p8
+GoogleService-Info.plist
+client_*googleusercontent.com*.plist
+.env
+.env.*
+supabase/.temp/
+build/
