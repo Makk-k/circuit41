@@ -29,15 +29,17 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { RootStackParamList } from '../App';
 import AddItemBottomSheet, { NewItem } from '../components/AddItemBottomSheet';
+import StaticTabBar from '../components/StaticTabBar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { shadow as SH } from '../lib/theme';
 import type { Parcel } from '../lib/database.types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShipmentWorkspace'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
@@ -308,7 +310,8 @@ export default function ShipmentWorkspaceScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.safeArea}>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        {hasActiveItems && (
+        {hasActiveItems ? (
+          /* Shipment with parcels — original back control (unchanged behaviour) */
           <TouchableOpacity
             onPress={handleBack}
             activeOpacity={0.7}
@@ -318,6 +321,20 @@ export default function ShipmentWorkspaceScreen({ navigation, route }: Props) {
             <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
               <Path d="M15 18l-6-6 6-6" stroke="#1A1A1A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
+          </TouchableOpacity>
+        ) : (
+          /* Empty newly-created shipment — clear "‹ Shipments" fallback so the
+             user is never trapped. Always routes to the Shipments tab. */
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Shipments' })}
+            activeOpacity={0.7}
+            style={styles.backToShipments}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Path d="M15 18l-6-6 6-6" stroke="#1A1A1A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+            <Text style={styles.backToShipmentsText}>Shipments</Text>
           </TouchableOpacity>
         )}
 
@@ -345,7 +362,10 @@ export default function ShipmentWorkspaceScreen({ navigation, route }: Props) {
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── BLOCK 1: Drop-off Address ───────────────────────────────── */}
         <Text style={[styles.sectionLabel, { marginTop: 24 }]}>DROP-OFF ADDRESS</Text>
 
@@ -434,10 +454,10 @@ export default function ShipmentWorkspaceScreen({ navigation, route }: Props) {
 
       </ScrollView>
 
-      {/* ── CANCEL SHIPMENT — absolute at bottom, only when no active parcels ── */}
+      {/* ── CANCEL SHIPMENT — sits just above the bottom nav, only when no active parcels ── */}
       {!hasActiveItems && (
         <TouchableOpacity
-          style={[styles.cancelShipmentBtn, { bottom: 90 + insets.bottom }]}
+          style={[styles.cancelShipmentBtn, { bottom: 96 + insets.bottom }]}
           activeOpacity={0.7}
           onPress={handleCancelShipment}
         >
@@ -445,6 +465,8 @@ export default function ShipmentWorkspaceScreen({ navigation, route }: Props) {
         </TouchableOpacity>
       )}
 
+      {/* ── BOTTOM NAVIGATION — keep the user oriented; never trapped here ── */}
+      <StaticTabBar navigation={navigation} activeKey="Shipments" />
 
       {/* ── Add Item Bottom Sheet ────────────────────────────────────── */}
       <AddItemBottomSheet
@@ -582,7 +604,7 @@ const ParcelCard: React.FC<ParcelCardProps> = ({ item, onShowQR, onCancelParcel 
 
       {/* Tracking / reference ID */}
       <TouchableOpacity onPress={() => onShowQR(item)}>
-        <Text style={{ fontSize: 12, color: '#C10F1D', fontWeight: '500', textDecorationLine: 'underline', marginTop: 4 }}>
+        <Text style={{ fontSize: 12, color: '#CD643D', fontWeight: '500', textDecorationLine: 'underline', marginTop: 4 }}>
           {displayRef}
         </Text>
       </TouchableOpacity>
@@ -705,7 +727,7 @@ const itemStyles = StyleSheet.create({
   },
   noPhotosText:    { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 11, color: '#A0A0A0', fontStyle: 'italic' },
   cancelParcelBtn:  { marginTop: 10, alignSelf: 'flex-start' },
-  cancelParcelText: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 11, color: '#C10F1D' },
+  cancelParcelText: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 11, color: '#DC2626' },
   // Full-screen photo viewer modal
   viewerOverlay: {
     flex: 1,
@@ -743,6 +765,21 @@ const styles = StyleSheet.create({
     padding:         8,
   },
   backLabelMuted: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, color: DS.textSecondary },
+  backToShipments: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           2,
+    alignSelf:     'flex-start',
+    marginBottom:  12,
+    marginLeft:    -4,
+    paddingVertical: 2,
+    paddingRight:  8,
+  },
+  backToShipmentsText: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize:   15,
+    color:      DS.textPrimary,
+  },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   helpBtn:        { marginLeft: 'auto', padding: 2 },
   headerTitle:    { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20, color: DS.textPrimary },
@@ -761,23 +798,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10,
   },
 
-  // Warehouse card
+  // Warehouse card — solid dark premium card (important, copyable, not loud). No border, no blue.
   warehouseCard: {
-    backgroundColor: DS.card, borderWidth: 1, borderColor: DS.border,
-    borderRadius: 14, padding: 14, paddingHorizontal: 16,
+    backgroundColor: '#1A1712', borderRadius: 18, padding: 18, ...SH.dark,
   },
   warehouseText: {
-    fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, color: DS.textPrimary, lineHeight: 21,
+    fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14, color: '#FFFFFF', lineHeight: 22,
   },
   warehouseNote: {
-    fontFamily: 'PlusJakartaSans_400Regular', fontSize: 11, color: DS.textSecondary, marginTop: 6,
+    fontFamily: 'PlusJakartaSans_400Regular', fontSize: 11.5, color: 'rgba(255,255,255,0.62)', marginTop: 6,
   },
   copyButton: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: DS.bg,
-    borderWidth: 1, borderColor: DS.border, borderRadius: 8, paddingVertical: 6,
-    paddingHorizontal: 12, alignSelf: 'flex-start', marginTop: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF',
+    borderRadius: 12, paddingVertical: 9, paddingHorizontal: 14, alignSelf: 'flex-start', marginTop: 14,
   },
-  copyButtonText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 12, color: DS.textPrimary },
+  copyButtonText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 12.5, color: '#1A1712' },
 
   // Add item dashed button
   addItemButton: {
@@ -789,7 +824,7 @@ const styles = StyleSheet.create({
   // Ready to ship
   readySection:    { alignItems: 'center' },
   readyButton:     {
-    backgroundColor: DS.accent, borderRadius: 14, paddingVertical: 15, width: '100%', alignItems: 'center',
+    backgroundColor: '#1A1712', borderRadius: 14, paddingVertical: 15, width: '100%', alignItems: 'center',
   },
   readyButtonText:         { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13, color: '#FFFFFF' },
   readyButtonDisabled:     { backgroundColor: '#E2E0DA' },
@@ -806,7 +841,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-  cancelShipmentText: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, color: '#C10F1D', textAlign: 'center' },
+  cancelShipmentText: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, color: '#DC2626', textAlign: 'center' },
 
   backWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   backLabelAccent: { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, color: DS.accent },

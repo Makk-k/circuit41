@@ -25,25 +25,25 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SlotSelection'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 // ─── Tag styling ──────────────────────────────────────────────────────────────
 type TagStyle = { bg: string; color: string };
 
 function getTagStyle(tag: string | null): TagStyle {
-  if (!tag) return { bg: '#F7F6F0', color: '#6B6B6B' };
+  if (!tag) return { bg: '#F5F9F6', color: '#6B6B6B' };
   const t = tag.toLowerCase();
   if (t.includes('standard') || t.includes('recommend')) return { bg: '#F0FDF4', color: '#16A34A' };
-  if (t.includes('express') || t.includes('fast')) return { bg: '#FEF2F2', color: '#B91C1C' };
-  if (t.includes('economy') || t.includes('afford')) return { bg: '#F7F6F0', color: '#6B6B6B' };
-  return { bg: '#F7F6F0', color: '#6B6B6B' };
+  if (t.includes('express') || t.includes('fast')) return { bg: 'rgba(205,100,61,0.10)', color: '#9A3B1C' };
+  if (t.includes('economy') || t.includes('afford')) return { bg: '#F5F9F6', color: '#6B6B6B' };
+  return { bg: '#F5F9F6', color: '#6B6B6B' };
 }
 
 function currencySymbol(currency?: string | null): string {
@@ -130,7 +130,7 @@ const SlotCard: React.FC<SlotCardProps> = ({ slot, selected, onSelect }) => {
     >
       {/* Top row: name + tag pill */}
       <View style={styles.row}>
-        <Text style={styles.slotName}>{slot.name}</Text>
+        <Text style={[styles.slotName, selected && styles.onDark]}>{slot.name}</Text>
         {slot.tag && (
           <View style={[styles.tagPill, { backgroundColor: tagStyle.bg }]}>
             <Text style={[styles.tagText, { color: tagStyle.color }]}>{slot.tag}</Text>
@@ -140,13 +140,13 @@ const SlotCard: React.FC<SlotCardProps> = ({ slot, selected, onSelect }) => {
 
       {/* Main rate row */}
       <View style={[styles.row, { marginTop: 10 }]}>
-        <Text style={styles.rateLabel}>{slot.general_rate == null ? 'Available service' : 'General goods'}</Text>
-        <Text style={styles.rateValue}>{slot.general_rate == null ? slot.currency : `${symbol}${slot.general_rate}/kg`}</Text>
+        <Text style={[styles.rateLabel, selected && styles.onDarkMuted]}>{slot.general_rate == null ? 'Available service' : 'General goods'}</Text>
+        <Text style={[styles.rateValue, selected && styles.onDark]}>{slot.general_rate == null ? slot.currency : `${symbol}${slot.general_rate}/kg`}</Text>
       </View>
 
       {/* Duration */}
       {(slot as any).estimated_duration && (
-        <Text style={styles.durationText}>{(slot as any).estimated_duration}</Text>
+        <Text style={[styles.durationText, selected && styles.onDarkMuted]}>{(slot as any).estimated_duration}</Text>
       )}
 
       {/* Expand toggle */}
@@ -156,7 +156,7 @@ const SlotCard: React.FC<SlotCardProps> = ({ slot, selected, onSelect }) => {
           onPress={() => setExpanded(prev => !prev)}
           style={{ marginTop: 8 }}
         >
-          <Text style={styles.expandToggle}>
+          <Text style={[styles.expandToggle, selected && { color: '#E0875F' }]}>
             {expanded ? 'Hide rates ↑' : 'See all rates ↓'}
           </Text>
         </TouchableOpacity>
@@ -164,17 +164,17 @@ const SlotCard: React.FC<SlotCardProps> = ({ slot, selected, onSelect }) => {
 
       {/* Expanded rates */}
       {expanded && (
-        <View style={styles.expandedSection}>
+        <View style={[styles.expandedSection, selected && { borderTopColor: 'rgba(255,255,255,0.14)' }]}>
           {rates.map(row => (
             <View key={row.label} style={[styles.row, styles.expandedRow]}>
-              <Text style={styles.expandedLabel}>{row.label}</Text>
-              <Text style={styles.expandedRate}>{symbol}{row.rate}/kg</Text>
+              <Text style={[styles.expandedLabel, selected && styles.onDarkMuted]}>{row.label}</Text>
+              <Text style={[styles.expandedRate, selected && styles.onDark]}>{symbol}{row.rate}/kg</Text>
             </View>
           ))}
           {slot.minimum_charge != null && (
             <View style={[styles.row, styles.expandedRow]}>
-              <Text style={styles.expandedLabel}>Minimum charge</Text>
-              <Text style={styles.expandedRate}>{symbol}{slot.minimum_charge}</Text>
+              <Text style={[styles.expandedLabel, selected && styles.onDarkMuted]}>Minimum charge</Text>
+              <Text style={[styles.expandedRate, selected && styles.onDark]}>{symbol}{slot.minimum_charge}</Text>
             </View>
           )}
         </View>
@@ -343,13 +343,21 @@ const styles = StyleSheet.create({
   // Slot card
   slotCard: {
     backgroundColor:   DS.card,
-    borderRadius:      16,
+    borderRadius:      18,
     padding:           16,
     paddingHorizontal: 18,
     marginBottom:      10,
   },
-  slotCardDefault:  { borderWidth: 1,   borderColor: DS.border },
-  slotCardSelected: { borderWidth: 1.5, borderColor: DS.accent },
+  // Borderless neutral card; selected = solid dark fill (no border, no blue).
+  slotCardDefault: {
+    shadowColor: '#1A1A1A', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1,
+  },
+  slotCardSelected: {
+    backgroundColor: '#1A1712',
+    shadowColor: '#140F08', shadowOpacity: 0.28, shadowRadius: 22, shadowOffset: { width: 0, height: 12 }, elevation: 8,
+  },
+  onDark:      { color: '#FFFFFF' },
+  onDarkMuted: { color: 'rgba(255,255,255,0.66)' },
 
   // Inside card
   row: {
@@ -414,7 +422,7 @@ const styles = StyleSheet.create({
 
   // CTA
   ctaButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    14,
     paddingVertical: 15,
     alignItems:      'center',

@@ -17,6 +17,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Svg, Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { gradients as G, shadow as SH } from '../lib/theme';
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -26,17 +28,17 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { RootStackParamList } from '../App';
 import ActionBottomSheet from '../components/ActionBottomSheet';
+import StaticTabBar from '../components/StaticTabBar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 type Props       = NativeStackScreenProps<RootStackParamList, 'ShipmentDetail'>;
-type DetailTab   = 'Timeline' | 'Details' | 'Documents' | 'Events';
-type SectionKey  = 'shipmentInfo' | 'cargoInfo' | 'parties' | 'cost';
+type SectionKey  = 'events' | 'parcels' | 'info' | 'documents' | 'cost';
 type StageStatus = 'completed' | 'active' | 'upcoming';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
@@ -70,6 +72,15 @@ type EventItem = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(isoStr: string): string {
   return new Date(isoStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function formatDateShort(isoStr: string): string {
+  return new Date(isoStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function prettify(value?: string | null): string {
+  if (!value) return '—';
+  return value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function formatDateTime(isoStr: string): string {
@@ -142,12 +153,12 @@ export default function ShipmentDetailScreen({ navigation, route }: Props) {
   const { isCompleted, shipmentId } = route.params;
   const { user } = useAuth();
 
-  const [activeTab,     setActiveTab]     = useState<DetailTab>('Timeline');
   const [openSections,  setOpenSections]  = useState<Record<SectionKey, boolean>>({
-    shipmentInfo: true,   // open by default
-    cargoInfo:    false,
-    parties:      false,
-    cost:         false,
+    events:    false,
+    parcels:   false,
+    info:      false,
+    documents: false,
+    cost:      false,
   });
   const [shipment,        setShipment]        = useState<any>(null);
   const [parcels,         setParcels]         = useState<any[]>([]);
@@ -389,11 +400,7 @@ export default function ShipmentDetailScreen({ navigation, route }: Props) {
     ];
 
     return (
-      <ScrollView
-        style={styles.tabScroll}
-        contentContainerStyle={styles.timelineContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.timelineContent}>
         {timelineStages.map((stage, idx) => {
           const isFirst = idx === 0;
           const isLast  = idx === timelineStages.length - 1;
@@ -444,163 +451,101 @@ export default function ShipmentDetailScreen({ navigation, route }: Props) {
             </View>
           );
         })}
-      </ScrollView>
+      </View>
     );
   };
 
-  // ─── Cargo table — rendered inside the Cargo Info collapsible section ────
-  const renderCargoTable = () => (
+  // ─── Reusable label/value rows ───────────────────────────────────────────
+  const renderRows = (rows: DetailRow[], note?: string) => (
     <View style={styles.sectionContent}>
-      {/* Table header row */}
-      <View style={[styles.tableRow, styles.tableHeaderRow]}>
-        <Text style={[styles.tableHeader, { flex: 3 }]}>Item</Text>
-        <Text style={[styles.tableHeader, { flex: 2, textAlign: 'right' }]}>Reference</Text>
-      </View>
-
-      {/* Parcel rows */}
-      {parcels.length === 0 ? (
-        <View style={styles.tableDivider} />
-      ) : parcels.map((parcel) => (
-        <React.Fragment key={parcel.id}>
-          <View style={styles.tableDivider} />
-          <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 3 }]}>
-              {parcel.item_names?.join(', ') || '—'}
-            </Text>
-            <Text style={[styles.tableCell, { flex: 2, textAlign: 'right' }]}>
-              {parcel.tracking_id ?? parcel.reference_id ?? '—'}
-            </Text>
-          </View>
-          {parcel.category && (
-            <View style={[styles.tableRow, { paddingTop: 0 }]}>
-              <Text style={[styles.tableCell, { flex: 1, color: DS.textMuted, fontSize: 11 }]}>
-                {parcel.category}
-              </Text>
-            </View>
-          )}
-        </React.Fragment>
+      {rows.map((row, rIdx) => (
+        <View
+          key={row.label}
+          style={[styles.detailRow, rIdx < rows.length - 1 && styles.detailRowBorder]}
+        >
+          <Text style={styles.detailLabel} maxFontSizeMultiplier={1.2}>{row.label}</Text>
+          <Text style={[styles.detailValue, row.muted && styles.detailValueMuted]} maxFontSizeMultiplier={1.2}>{row.value}</Text>
+        </View>
       ))}
+      {note && <Text style={styles.sectionNote}>{note}</Text>}
     </View>
   );
 
-  // ─── Details tab content ─────────────────────────────────────────────────
-  const renderDetails = () => {
-    const dynamicSections: Section[] = [
-      {
-        key:   'shipmentInfo',
-        title: 'Shipment Info',
-        rows:  [
-          { label: 'Slot',          value: [shipment?.slot_name, shipment?.slot_tag].filter(Boolean).join(' · ') || '—' },
-          { label: 'Origin',        value: shipment?.origin_country ?? '—' },
-          { label: 'Destination',      value: shipment?.destination_country ?? '—' },
-          { label: 'Delivery Address', value: shipment?.delivery_address || 'Not set yet', muted: !shipment?.delivery_address },
-          { label: 'Carrier',          value: shipment?.carrier || 'TBC' },
-          { label: 'Tracking ref',  value: shipment?.tracking_reference || 'TBC' },
-          { label: 'Est. delivery', value: shipment?.estimated_delivery ? formatDate(shipment.estimated_delivery) : 'TBC' },
-          { label: 'Created',       value: shipment?.created_at ? formatDate(shipment.created_at) : '—' },
-        ],
-      },
-      {
-        key:   'cargoInfo',
-        title: 'Cargo Info',
-        rows:  [],
-      },
-      {
-        key:    'cost',
-        title:  'Cost',
-        locked: true,
-        rows:   [
-          { label: 'Rate',   value: shipment?.slot_rate != null ? `${currencySymbol((shipment as any)?.rate_currency)}${shipment.slot_rate}/kg` : 'TBC' },
-          { label: 'Weight', value: shipment?.total_weight != null ? `${shipment.total_weight}kg` : 'Pending' },
-          { label: 'Total',  value: shipment?.total_cost != null ? `${currencySymbol((shipment as any)?.rate_currency)}${shipment.total_cost}` : 'Pending' },
-        ],
-        note: 'Inclusive of all fees',
-      },
-    ];
-
+  // ─── Accordion body: Parcels (what's actually inside the shipment) ───────
+  const renderParcels = () => {
+    if (parcels.length === 0) {
+      return (
+        <View style={styles.sectionContent}>
+          <Text style={styles.emptyMini}>No parcels added yet</Text>
+        </View>
+      );
+    }
     return (
-    <ScrollView
-      style={styles.tabScroll}
-      contentContainerStyle={styles.detailsContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {dynamicSections.map((section, sIdx) => {
-        const isOpen = openSections[section.key];
-        return (
-          <View key={section.key}>
-            {sIdx > 0 && <View style={styles.sectionDivider} />}
-
-            {/* Collapsible header row */}
-            <TouchableOpacity
-              style={styles.sectionHeader}
-              activeOpacity={0.7}
-              onPress={() => toggleSection(section.key)}
-            >
-              <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.2}>{section.title}</Text>
-                {section.locked && (
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={13}
-                    color={DS.textSecondary}
-                    style={{ marginLeft: 6 }}
-                  />
-                )}
-              </View>
-              <Ionicons
-                name="chevron-down"
-                size={16}
-                color={DS.textSecondary}
-                style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
-              />
-            </TouchableOpacity>
-
-            {/* Expanded content — Cargo Info uses a table; all others use label/value rows */}
-            {isOpen && (
-              section.key === 'cargoInfo'
-                ? renderCargoTable()
-                : (
-                  <View style={styles.sectionContent}>
-                    {section.rows.map((row, rIdx) => (
-                      <View
-                        key={row.label}
-                        style={[
-                          styles.detailRow,
-                          rIdx < section.rows.length - 1 && styles.detailRowBorder,
-                        ]}
-                      >
-                        <Text style={styles.detailLabel} maxFontSizeMultiplier={1.2}>{row.label}</Text>
-                        <Text style={[styles.detailValue, row.muted && styles.detailValueMuted]} maxFontSizeMultiplier={1.2}>{row.value}</Text>
-                      </View>
-                    ))}
-                    {section.note && (
-                      <Text style={styles.sectionNote}>{section.note}</Text>
-                    )}
-                  </View>
-                )
-            )}
-          </View>
-        );
-      })}
-    </ScrollView>
+      <View style={styles.sectionContent}>
+        {parcels.map((p, i) => {
+          const photoCount = p.photos?.length ?? 0;
+          const rows: DetailRow[] = [
+            { label: 'Category',     value: prettify(p.category) },
+            { label: 'Status',       value: prettify(p.status) },
+            { label: 'Tracking',     value: p.tracking_id || p.reference_id || '—' },
+            { label: 'Weight',       value: p.weight != null ? `${p.weight}kg` : 'Pending' },
+            { label: 'Added',        value: p.created_at ? formatDate(p.created_at) : '—' },
+            { label: 'Photos/proofs', value: photoCount > 0
+                ? `${photoCount} file${photoCount !== 1 ? 's' : ''}`
+                : (p.has_receipt ? 'Receipt on file' : 'None') },
+          ];
+          return (
+            <View key={p.id} style={i > 0 ? styles.parcelBlock : undefined}>
+              <Text style={styles.parcelName} numberOfLines={2}>
+                {p.item_names?.join(', ') || `Parcel ${i + 1}`}
+              </Text>
+              {renderRows(rows)}
+            </View>
+          );
+        })}
+      </View>
     );
+  };
+
+  // ─── Accordion body: Shipment Information (simplified) ───────────────────
+  const renderInfoBody = () => {
+    const infoRows: DetailRow[] = [
+      { label: 'Shipment ID',      value: shipment ? shipmentRef(shipment.id) : '—' },
+      { label: 'Slot',             value: [shipment?.slot_name, shipment?.slot_tag].filter(Boolean).join(' · ') || '—' },
+      { label: 'Origin',           value: shipment?.origin_country ?? '—' },
+      { label: 'Destination',      value: shipment?.destination_country ?? '—' },
+      { label: 'Delivery Address', value: shipment?.delivery_address || 'Not set yet', muted: !shipment?.delivery_address },
+      { label: 'Total weight',     value: shipment?.total_weight != null ? `${shipment.total_weight}kg` : 'Pending' },
+      { label: 'Created',          value: shipment?.created_at ? formatDate(shipment.created_at) : '—' },
+    ];
+    return renderRows(infoRows);
+  };
+
+  // ─── Accordion body: Cost ─────────────────────────────────────────────────
+  const renderCostBody = () => {
+    const hasCostData = shipment?.slot_rate != null || shipment?.total_weight != null || shipment?.total_cost != null;
+    if (!hasCostData) {
+      return (
+        <View style={styles.sectionContent}>
+          <Text style={styles.emptyMini}>No cost records yet</Text>
+        </View>
+      );
+    }
+    const costRows: DetailRow[] = [
+      { label: 'Rate',   value: shipment?.slot_rate != null ? `${currencySymbol((shipment as any)?.rate_currency)}${shipment.slot_rate}/kg` : 'TBC' },
+      { label: 'Weight', value: shipment?.total_weight != null ? `${shipment.total_weight}kg` : 'Pending' },
+      { label: 'Total',  value: shipment?.total_cost != null ? `${currencySymbol((shipment as any)?.rate_currency)}${shipment.total_cost}` : 'Pending' },
+    ];
+    return renderRows(costRows, 'Inclusive of all fees');
   };
 
   // ─── Documents tab content ───────────────────────────────────────────────
   const renderDocuments = () => (
-    <ScrollView
-      style={styles.tabScroll}
-      contentContainerStyle={styles.docsContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.docsLabel}>DOCUMENTS</Text>
+    <View style={styles.docsContent}>
+      <Text style={styles.subHeading}>Documents & photos</Text>
 
       {documents.length === 0 ? (
-        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-          <Text style={{ fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, color: '#A0A0A0' }}>
-            No documents yet
-          </Text>
-        </View>
+        <Text style={styles.emptyMini}>No documents uploaded yet</Text>
       ) : (
         <View style={styles.docsCard}>
           {documents.map((doc, idx) => (
@@ -646,22 +591,14 @@ export default function ShipmentDetailScreen({ navigation, route }: Props) {
           <Text style={styles.uploadBtnText}>Upload Document</Text>
         )}
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 
   // ─── Events tab content ──────────────────────────────────────────────────
   const renderEvents = () => (
-    <ScrollView
-      style={styles.tabScroll}
-      contentContainerStyle={styles.eventsContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.eventsContent}>
       {events.length === 0 ? (
-        <View style={{ paddingVertical: 32, alignItems: 'center' }}>
-          <Text style={{ fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, color: '#A0A0A0' }}>
-            No events yet
-          </Text>
-        </View>
+        <Text style={styles.emptyMini}>No activity recorded yet</Text>
       ) : events.map(item => {
 
         if (item.type === 'activity') {
@@ -726,150 +663,172 @@ export default function ShipmentDetailScreen({ navigation, route }: Props) {
           </View>
         );
       })}
-    </ScrollView>
+    </View>
   );
+
+  // ─── Hero card data (all derived from real shipment data) ────────────────
+  const statusBadge = shipment ? getStatusBadge(shipment.status) : null;
+
+  // Headline prefers customer-facing delivery info; only falls back to the raw
+  // status when no ETA/friendly phrase is available.
+  const computeHeroHeadline = (): string => {
+    if (shipment?.estimated_delivery) return `Arriving ${formatDateShort(shipment.estimated_delivery)}`;
+    const dest = shipment?.destination_country;
+    switch (shipment?.status) {
+      case 'received':         return 'Delivery pending';
+      case 'origin_port':
+      case 'in_transit':       return dest ? `In transit to ${dest}` : 'In transit';
+      case 'destination_port': return dest ? `Arriving in ${dest}` : 'Arriving soon';
+      case 'out_for_delivery': return 'Out for delivery';
+      case 'delivered':        return 'Delivered';
+      default:                 return statusBadge?.label ?? '—';
+    }
+  };
+  const heroHeadline = computeHeroHeadline();
+
+  const stageEvents = [
+    { ts: shipment?.received_at,         text: 'Received at warehouse' },
+    { ts: shipment?.origin_port_at,      text: shipment?.origin_port_name ? `Left ${shipment.origin_port_name}` : 'Departed origin port' },
+    { ts: shipment?.in_transit_at,       text: shipment?.carrier_vessel ? `On board ${shipment.carrier_vessel}` : 'In transit' },
+    { ts: shipment?.destination_port_at, text: shipment?.destination_port_name ? `Arrived ${shipment.destination_port_name}` : 'Arrived destination port' },
+    { ts: shipment?.out_for_delivery_at, text: 'Out for delivery' },
+    { ts: shipment?.delivered_at,        text: 'Delivered' },
+  ].filter(e => !!e.ts) as { ts: string; text: string }[];
+  const latestEvent = stageEvents.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())[0];
+  const heroSub = latestEvent
+    ? `${latestEvent.text} · ${timeAgo(latestEvent.ts)}`
+    : (shipment?.created_at ? `Created · ${timeAgo(shipment.created_at)}` : '');
+
+  // ─── Bottom card sections (order + right-aligned summary value) ──────────
+  const fmtMoney = (n: number) => `${currencySymbol((shipment as any)?.rate_currency)}${Number(n).toFixed(2)}`;
+  const sections: { key: SectionKey; title: string; summary?: string; body: () => React.ReactNode }[] = [
+    { key: 'events',    title: 'Events',         summary: events.length > 0 ? `${events.length}` : undefined,                       body: renderEvents },
+    { key: 'parcels',   title: 'Parcels',        summary: `${parcels.length} item${parcels.length !== 1 ? 's' : ''}`,               body: renderParcels },
+    { key: 'info',      title: 'Shipment info',  body: renderInfoBody },
+    { key: 'documents', title: 'Documents',      summary: documents.length > 0 ? `${documents.length} file${documents.length !== 1 ? 's' : ''}` : undefined, body: renderDocuments },
+    { key: 'cost',      title: 'Cost',           summary: shipment?.total_cost != null ? fmtMoney(shipment.total_cost) : undefined,  body: renderCostBody },
+  ];
 
   return (
     <View style={styles.root}>
 
-      {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
-
-        {/* Row 1: back button + help (raise a question) */}
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            activeOpacity={0.7}
-            onPress={() => navigation.goBack()}
-          >
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path d="M15 18l-6-6 6-6" stroke="#1A1A1A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.helpBtn}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={() => navigation.navigate('ShipmentSupport', { shipmentId: route.params.shipmentId })}
-          >
-            <Ionicons name="help-circle-outline" size={26} color="#CD643D" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Row 2: shipment ID + status / archived pills */}
-        <View style={[styles.headerRow, { marginTop: 16 }]}>
-          <Text style={styles.shipmentId} allowFontScaling={false}>
-            Shipment {shipment ? shipmentRef(shipment.id) : '—'}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            {shipment?.archived_at && (
-              <View style={styles.archivedPill}>
-                <Text style={styles.archivedPillText} allowFontScaling={false} numberOfLines={1}>Archived</Text>
-              </View>
-            )}
-            {shipment && (() => {
-              const badge = getStatusBadge(shipment.status);
-              return (
-                <View style={[styles.statusPill, { backgroundColor: badge.bg }]}>
-                  <Text style={[styles.statusPillText, { color: badge.text }]} allowFontScaling={false} numberOfLines={1}>{badge.label}</Text>
-                </View>
-              );
-            })()}
-          </View>
-        </View>
-
-        {/* Row 3: route */}
-        <Text style={[styles.headerRoute, { marginTop: 8 }]} maxFontSizeMultiplier={1.2}>
-          {shipment ? `${shipment.origin_country} → ${shipment.destination_country}` : '—'}
-        </Text>
-
-        {/* Thin divider */}
-        <View style={[styles.headerDivider, { marginTop: 14 }]} />
-
-        {/* Row 4: cargo summary */}
-        <View style={[styles.headerRow, { marginTop: 14, flexWrap: 'wrap' }]}>
-          <Text style={styles.cargoName} maxFontSizeMultiplier={1.2}>
-            {parcels.length > 0
-              ? `${parcels.length} parcel${parcels.length !== 1 ? 's' : ''}`
-              : 'No parcels'}
-          </Text>
-          {shipment?.total_weight != null && (
-            <Text style={styles.cargoDims} maxFontSizeMultiplier={1.2}>{' '}· {shipment.total_weight}kg</Text>
-          )}
-        </View>
-
-        {/* Row 5: ETA */}
-        <View style={[styles.headerRow, { marginTop: 8 }]}>
-          <Text style={styles.etaLabel} maxFontSizeMultiplier={1.2}>Estimated arrival </Text>
-          <Text style={styles.etaValue} maxFontSizeMultiplier={1.2}>
-            {shipment?.estimated_delivery ? formatDate(shipment.estimated_delivery) : 'TBC'}
-          </Text>
-        </View>
-
-      </View>
-
-      {/* ── DELIVERY BANNER — shown when shipment is completed ──────────── */}
-      {isCompleted && (
-        <View style={styles.deliveryBanner}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Path d="M20 6L9 17l-5-5" stroke="#15803D" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      {/* ── TOP BAR: back · route title · help ──────────────────────────── */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 16 }]}>
+        <TouchableOpacity
+          style={styles.iconBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 18l-6-6 6-6" stroke="#1A1A1A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
-          <Text style={styles.deliveryBannerText} maxFontSizeMultiplier={1.2}>
-            Delivered{shipment?.delivered_at ? ` · ${formatDate(shipment.delivered_at)}` : ''}
+        </TouchableOpacity>
+
+        <Text style={styles.topTitle} numberOfLines={1} allowFontScaling={false}>
+          {shipment ? `${shipment.origin_country} → ${shipment.destination_country}` : 'Shipment'}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.iconBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPress={() => navigation.navigate('ShipmentSupport', { shipmentId: route.params.shipmentId })}
+        >
+          <Ionicons name="help-circle-outline" size={26} color={DS.accent} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── SCROLL: hero · timeline · accordion ─────────────────────────── */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── HERO / STATUS CARD ── */}
+        <View style={styles.heroWrap}>
+          <LinearGradient colors={G.heroDark} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+            <View style={styles.heroGlow} pointerEvents="none" />
+            <View style={styles.heroTopRow}>
+              <Text style={styles.heroStatusLine} allowFontScaling={false}>
+                {(statusBadge?.label ?? '—').toUpperCase()}
+              </Text>
+              {shipment?.archived_at && (
+                <View style={styles.heroArchivedPill}>
+                  <Text style={styles.heroArchivedText} allowFontScaling={false}>Archived</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.heroHeadline} allowFontScaling={false}>{heroHeadline}</Text>
+            {!!heroSub && (
+              <Text style={styles.heroSub} allowFontScaling={false} numberOfLines={2}>{heroSub}</Text>
+            )}
+          </LinearGradient>
+        </View>
+
+        {/* ── DELIVERY BANNER — shown when shipment is completed ── */}
+        {isCompleted && (
+          <View style={styles.deliveryBanner}>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+              <Path d="M20 6L9 17l-5-5" stroke="#15803D" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+            <Text style={styles.deliveryBannerText} maxFontSizeMultiplier={1.2}>
+              Delivered{shipment?.delivered_at ? ` · ${formatDate(shipment.delivered_at)}` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* ── TIMELINE — original boxed style, compact + internally scrollable ── */}
+        <View style={styles.timelineViewport}>
+          <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+            {renderTimeline()}
+          </ScrollView>
+        </View>
+
+        {/* ── ONE unified card: Events · Parcels · Shipment info · Documents · Cost ── */}
+        <View style={styles.listCard}>
+          {sections.map((section, idx) => {
+            const isOpen = openSections[section.key];
+            return (
+              <View key={section.key}>
+                {idx > 0 && <View style={styles.listDivider} />}
+                <TouchableOpacity
+                  style={styles.listRow}
+                  activeOpacity={0.6}
+                  onPress={() => toggleSection(section.key)}
+                >
+                  <Text style={styles.listRowLabel} maxFontSizeMultiplier={1.2}>{section.title}</Text>
+                  <View style={styles.listRowRight}>
+                    {!!section.summary && (
+                      <Text style={styles.listRowValue} allowFontScaling={false}>{section.summary}</Text>
+                    )}
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={DS.textMuted}
+                      style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }], marginLeft: 6 }}
+                    />
+                  </View>
+                </TouchableOpacity>
+                {isOpen && <View style={styles.listRowBody}>{section.body()}</View>}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* ── FOOTER ── */}
+        <View style={styles.footer}>
+          <FadingDivider />
+          <Text style={styles.footerText} allowFontScaling={false}>
+            {shipment?.updated_at ? `Last updated · ${formatDateTime(shipment.updated_at)}` : ''}
           </Text>
         </View>
-      )}
+      </ScrollView>
 
-      {/* ── TAB BAR — 4 tabs: Timeline, Details, Documents, Events ─────── */}
-      {/* Container border-bottom is the 1px #E2E0DA full-width rule.       */}
-      {/* Each tab's 2px indicator uses marginBottom: -1 to overlap it.     */}
-      <View style={styles.tabBar}>
-        {(['Timeline', 'Events', 'Details', 'Documents'] as const).map(tab => {
-          const isActive = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.tabBarBtn,
-                { borderBottomColor: isActive ? DS.accent : 'transparent' },
-              ]}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text
-                style={[
-                  styles.tabBarBtnText,
-                  {
-                    color:      isActive ? DS.textPrimary : DS.textSecondary,
-                    fontFamily: isActive
-                      ? 'PlusJakartaSans_700Bold'
-                      : 'PlusJakartaSans_400Regular',
-                  },
-                ]}
-                allowFontScaling={false}
-              >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* ── BOTTOM NAVIGATION — kept visible on this detail screen ───────── */}
+      <StaticTabBar navigation={navigation} activeKey="Shipments" />
 
-      {/* ── TAB CONTENT ─────────────────────────────────────────────────── */}
-      {activeTab === 'Timeline'  && renderTimeline()}
-      {activeTab === 'Events'    && renderEvents()}
-      {activeTab === 'Details'   && renderDetails()}
-      {activeTab === 'Documents' && renderDocuments()}
-
-      {/* ── FOOTER — always visible on all tabs ─────────────────────────── */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <FadingDivider />
-        <Text style={styles.footerText} allowFontScaling={false}>
-          {shipment?.updated_at ? `Last updated · ${formatDateTime(shipment.updated_at)}` : ''}
-        </Text>
-      </View>
-
-      {/* ── ACTION BOTTOM SHEET — opened from Events tab action items ───── */}
+      {/* ── ACTION BOTTOM SHEET — opened from Events section action items ─── */}
       <ActionBottomSheet
         visible={showActionSheet}
         onClose={() => setShowActionSheet(false)}
@@ -892,6 +851,154 @@ const styles = StyleSheet.create({
     flex:            1,
     backgroundColor: DS.bg,
     flexDirection:   'column',
+  },
+
+  // ── Top bar (back · route title · help) ──────────────────────────────────────
+  topBar: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: 16,
+    paddingBottom:     12,
+  },
+  iconBtn: {
+    width:           38,
+    height:          38,
+    borderRadius:    19,
+    alignItems:      'center',
+    justifyContent:  'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  topTitle: {
+    flex:       1,
+    textAlign:  'center',
+    marginHorizontal: 8,
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize:   16,
+    color:      DS.textPrimary,
+  },
+
+  // ── Hero / status card ───────────────────────────────────────────────────────
+  heroWrap: {
+    marginHorizontal: 20,
+    marginTop:        4,
+    borderRadius:     24,
+    shadowColor: '#140F08', shadowOpacity: 0.30, shadowRadius: 24, shadowOffset: { width: 0, height: 14 }, elevation: 8,
+  },
+  hero: {
+    borderRadius: 24,
+    padding:      20,
+    overflow:     'hidden',
+  },
+  heroGlow: {
+    position: 'absolute',
+    top: -60, right: -50,
+    width: 200, height: 200, borderRadius: 100,
+    backgroundColor: 'rgba(205,100,61,0.18)',
+  },
+  heroTopRow: {
+    flexDirection:  'row',
+    justifyContent: 'space-between',
+    alignItems:     'center',
+  },
+  heroStatusLine: {
+    fontFamily:    'PlusJakartaSans_700Bold',
+    fontSize:      11,
+    letterSpacing: 1.4,
+    color:         '#7CC698',
+  },
+  heroArchivedPill: {
+    backgroundColor:   'rgba(255,255,255,0.10)',
+    borderRadius:      20,
+    paddingVertical:   3,
+    paddingHorizontal: 10,
+  },
+  heroArchivedText: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize:   10,
+    color:      '#E0875F',
+  },
+  heroHeadline: {
+    fontFamily:    'PlusJakartaSans_700Bold',
+    fontSize:      28,
+    color:         '#FFFFFF',
+    marginTop:     12,
+    letterSpacing: -0.6,
+  },
+  heroSub: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize:   13,
+    color:      '#A39C8F',
+    marginTop:  6,
+  },
+
+  // ── Unified list card (Events · Parcels · Shipment info · Documents · Cost) ──
+  listCard: {
+    backgroundColor:  DS.card,
+    borderRadius:     18,
+    marginHorizontal: 20,
+    marginTop:        20,
+    overflow:         'hidden',
+    ...SH.card,
+  },
+  listDivider: {
+    height:           1,
+    backgroundColor:  DS.border,
+    marginHorizontal: 18,
+  },
+  listRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: 18,
+    paddingVertical:   18,
+  },
+  listRowLabel: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize:   15,
+    color:      DS.textPrimary,
+  },
+  listRowRight: {
+    flexDirection: 'row',
+    alignItems:    'center',
+  },
+  listRowValue: {
+    fontFamily: 'PlusJakartaSans_500Medium',
+    fontSize:   14,
+    color:      DS.textSecondary,
+  },
+  listRowBody: {
+    paddingHorizontal: 18,
+    paddingBottom:     8,
+  },
+  subHeading: {
+    fontFamily:    'PlusJakartaSans_600SemiBold',
+    fontSize:      11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color:         DS.textSecondary,
+    marginTop:     6,
+    marginBottom:  2,
+  },
+
+  // ── Parcels section ──────────────────────────────────────────────────────────
+  parcelBlock: {
+    borderTopWidth:  1,
+    borderTopColor:  DS.border,
+    marginTop:       8,
+    paddingTop:      8,
+  },
+  parcelName: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize:   14,
+    color:      DS.textPrimary,
+    marginTop:  10,
+  },
+  emptyMini: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize:   13,
+    color:      DS.textMuted,
+    paddingVertical: 12,
   },
 
   // ── Delivery banner ──────────────────────────────────────────────────────────
@@ -1018,7 +1125,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Timeline tab ─────────────────────────────────────────────────────────────
+  // ── Timeline (original boxed style, compact + internally scrollable) ────────
+  timelineViewport: {
+    maxHeight: 232,
+  },
   timelineContent: {
     paddingTop:    20,
     paddingLeft:   16,
@@ -1071,11 +1181,6 @@ const styles = StyleSheet.create({
     paddingVertical:         12,
     paddingHorizontal:       14,
   },
-  stageCardHeaderRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'flex-start',
-  },
   stageName: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize:   13,
@@ -1101,16 +1206,6 @@ const styles = StyleSheet.create({
   },
   stageSubtitleUpcoming: {
     color: DS.textMuted,
-  },
-  stageDetail: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize:   12,
-    color:      DS.textSecondary,
-    marginTop:  3,
-  },
-  stageDetailActive: {
-    fontFamily: 'PlusJakartaSans_500Medium',
-    color:      DS.accent,
   },
 
   // ── Details tab ──────────────────────────────────────────────────────────────
@@ -1221,11 +1316,11 @@ const styles = StyleSheet.create({
     color:      DS.textPrimary,
   },
 
-  // ── Documents tab ─────────────────────────────────────────────────────────────
+  // ── Documents section (nested inside accordion body) ─────────────────────────
   docsContent: {
-    paddingHorizontal: 20,
-    paddingTop:        20,
-    paddingBottom:     20,
+    paddingHorizontal: 0,
+    paddingTop:        12,
+    paddingBottom:     16,
   },
   docsLabel: {
     fontFamily:    'PlusJakartaSans_600SemiBold',
@@ -1291,10 +1386,10 @@ const styles = StyleSheet.create({
     color:      DS.textPrimary,
   },
 
-  // ── Events tab ───────────────────────────────────────────────────────────────
+  // ── Events section (nested inside accordion body) ────────────────────────────
   eventsContent: {
-    paddingTop:    16,
-    paddingBottom: 20,
+    paddingTop:    12,
+    paddingBottom: 16,
   },
   eventRow: {
     flexDirection:     'row',
@@ -1377,22 +1472,20 @@ const styles = StyleSheet.create({
 // ─── Event card styles (used only in renderEvents) ────────────────────────────
 const evtStyles = StyleSheet.create({
   activityCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FCFBF8',
     borderWidth:     1,
     borderColor:     '#F0EEE8',
     borderRadius:    12,
     padding:         14,
     marginBottom:    8,
-    marginHorizontal: 20,
   },
   actionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FCFBF8',
     borderWidth:     1,
     borderColor:     '#E2E0DA',
     borderRadius:    12,
     padding:         14,
     marginBottom:    8,
-    marginHorizontal: 20,
   },
   row: {
     flexDirection: 'row',

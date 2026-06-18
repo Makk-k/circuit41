@@ -22,12 +22,12 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ShipmentActive'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 // ─── Progress ring dimensions ─────────────────────────────────────────────────
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
 
   // Buttons
   primaryButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    14,
     paddingVertical: 15,
     width:           '100%',

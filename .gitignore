@@ -20,3 +20,13 @@ client_*googleusercontent.com*.plist
 .env.*
 supabase/.temp/
 build/
+
+# Android signing keystores (NEVER commit)
+*.jks
+*.keystore
+*.p12
+*.pepk
+# EAS / local credentials
+credentials.json
+google-services.json
+google-play-service-account*.json

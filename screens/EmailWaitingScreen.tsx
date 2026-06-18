@@ -23,13 +23,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EmailWaiting'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 // ─── Envelope SVG icon ────────────────────────────────────────────────────────

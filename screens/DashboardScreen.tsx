@@ -6,12 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  PanResponder,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Svg, Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { gradients as G } from '../lib/theme';
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -31,7 +34,7 @@ type Props = TabScreenProps<'Home'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   activityCard: '#F0EEE8',
   textPrimary:  '#1A1A1A',
@@ -113,7 +116,22 @@ export default function DashboardScreen({ navigation }: Props) {
 
   const [shipments,      setShipments]      = useState<Shipment[]>([]);
   const [activities,     setActivities]     = useState<Activity[]>([]);
+  const [profileName,    setProfileName]    = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  // Greeting name comes from the app profile (profiles.first_name), NOT the
+  // Gmail/Apple auth display name. Fetched once the user is known.
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('profiles')
+      .select('preferred_name, first_name')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setProfileName((data.preferred_name || data.first_name) ?? null);
+      });
+  }, [user?.id]);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -183,6 +201,60 @@ export default function DashboardScreen({ navigation }: Props) {
     refreshInitialData();
   }, [user?.id, fetchShipments, fetchActivities]);
 
+  // ── Layer gesture: the Dashboard is the centre layer. A downward pull reveals
+  //    Activity; an upward pull reveals Shipments. If the pull doesn't cross the
+  //    threshold it springs back (an "alive" bounce). Built-in PanResponder +
+  //    Animated only — no gesture-handler/reanimated, no navigation rebuild.
+  //    NOTE: declared before any early return so hook order stays stable.
+  const pan = useRef(new Animated.Value(0)).current;
+  const navigatingRef = useRef(false);
+  const gestureStart  = useRef(0);
+
+  // Deliberate "pull and hold" gating so casual swipes / normal scrolls never switch pages:
+  //   • must drag a long distance,
+  //   • must NOT be a quick flick (low release velocity),
+  //   • must hold the drag briefly.
+  const DIST_THRESHOLD = 160;  // px the finger must travel
+  const VEL_MAX        = 0.6;  // reject fast flicks (px/ms at release)
+  const MIN_DURATION   = 200;  // ms the gesture must last
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Only claim the gesture for a clearly vertical, non-trivial drag — small
+      // moves and normal scrolling fall through untouched.
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dy) > 24 && Math.abs(g.dy) > Math.abs(g.dx) * 2,
+      onPanResponderGrant: () => {
+        gestureStart.current = Date.now();
+      },
+      onPanResponderMove: (_, g) => {
+        // resistive follow — eases as you pull further (elastic feel)
+        const d = g.dy;
+        pan.setValue(Math.sign(d) * Math.min(Math.abs(d) * 0.45, 150));
+      },
+      onPanResponderRelease: (_, g) => {
+        const duration   = Date.now() - gestureStart.current;
+        const farEnough  = Math.abs(g.dy) > DIST_THRESHOLD;
+        const deliberate = Math.abs(g.vy) < VEL_MAX;     // not a quick flick
+        const held       = duration > MIN_DURATION;
+        const intentional = farEnough && deliberate && held;
+
+        if (!navigatingRef.current && intentional && g.dy > 0) {
+          navigatingRef.current = true;
+          navigation.navigate('Activity');
+        } else if (!navigatingRef.current && intentional && g.dy < 0) {
+          navigatingRef.current = true;
+          navigation.navigate('Shipments' as never);
+        }
+        Animated.spring(pan, { toValue: 0, useNativeDriver: true, friction: 6, tension: 70 })
+          .start(() => { navigatingRef.current = false; });
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(pan, { toValue: 0, useNativeDriver: true, friction: 6, tension: 70 }).start();
+      },
+    }),
+  ).current;
+
   if (!fontsLoaded) return null;
 
   const primary   = shipments[0] ?? null;
@@ -191,36 +263,49 @@ export default function DashboardScreen({ navigation }: Props) {
   const recentActivities = activities.filter(isRecentActivity);
   const hasUnreadActivity = activities.some(item => !item.is_read);
 
+  // Greeting (avatar + time-of-day + first name) per the design reference.
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  // Prefer the saved app profile first name; fall back to auth metadata name;
+  // finally a generic greeting. Never derive the name from the email address.
+  const meta: any = (user as any)?.user_metadata ?? {};
+  const metaName =
+    meta.first_name || (meta.full_name ? String(meta.full_name).split(' ')[0] : '');
+  const firstName = profileName || metaName || 'there';
+  const initial = String(firstName).charAt(0).toUpperCase() || 'C';
+
   const handleShipmentPress = async (shipment: Shipment) => {
     await navigateToShipment(shipment.id, navigation, 'home');
   };
 
   return (
+    // Outer container stays put — the FAB lives here so it never moves with the
+    // gesture surface or any scroll.
     <View style={{ flex: 1, backgroundColor: DS.bg }}>
+
+    {/* Whole-page gesture surface: pull down → Activity, up → Shipments (springs back otherwise). */}
+    <Animated.View
+      style={{ flex: 1, backgroundColor: DS.bg, transform: [{ translateY: pan }] }}
+      {...panResponder.panHandlers}
+    >
 
       {/* ── FIXED TOP SECTION — never scrolls ───────────────────────────── */}
       <View style={{ paddingHorizontal: 20, paddingTop: 56 }}>
 
-        {/* 1. GREETING ROW */}
+        {/* 1. GREETING ROW — avatar + good afternoon + first name */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting} allowFontScaling={false}>Welcome back 👋</Text>
-            <Text style={styles.subGreeting} allowFontScaling={false}>
-              {initialLoading
-                ? 'Loading...'
-                : hasShipments
-                  ? `${shipments.length} active shipment${shipments.length > 1 ? 's' : ''}`
-                  : 'No active shipments'}
-            </Text>
-          </View>
           <TouchableOpacity
-            style={styles.notificationButton}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('Activity')}
+            style={styles.avatar}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Profile' as never)}
+            accessibilityLabel="Open profile"
           >
-            <Ionicons name="notifications-outline" size={24} color={DS.textPrimary} />
-            {hasUnreadActivity && <View style={styles.notificationDot} />}
+            <Text style={styles.avatarText} allowFontScaling={false}>{initial}</Text>
           </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting} allowFontScaling={false}>{greet}</Text>
+            <Text style={styles.nameText} allowFontScaling={false} numberOfLines={1}>{firstName}</Text>
+          </View>
         </View>
 
         {initialLoading ? (
@@ -230,37 +315,53 @@ export default function DashboardScreen({ navigation }: Props) {
           </>
         ) : hasShipments ? (
           <>
-            {/* 2. PRIMARY SHIPMENT CARD */}
+            {/* 2. PRIMARY SHIPMENT — dark gradient hero */}
             {primary && (() => {
               const si = getStatusInfo(primary.status);
+              const order = ['in_progress', 'received', 'origin_port', 'in_transit', 'destination_port', 'out_for_delivery', 'delivered'];
+              const idx = order.indexOf(primary.status);
+              const frac = idx <= 0 ? 0.12 : idx / (order.length - 1);
+              const filled = Math.max(1, Math.min(4, Math.round(frac * 4)));
+              const eta = (primary as any).estimated_delivery
+                ? `Arriving ${new Date((primary as any).estimated_delivery).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                : si.stage;
               return (
                 <TouchableOpacity
-                  style={[styles.card, { borderColor: si.border }]}
-                  activeOpacity={0.85}
+                  activeOpacity={0.9}
                   onPress={() => handleShipmentPress(primary)}
+                  style={styles.heroWrap}
                 >
-                  <View style={styles.row}>
-                    <Text style={styles.shipmentId} allowFontScaling={false}>
-                      Shipment {shipmentRef(primary.id)}
-                    </Text>
-                    <View style={[styles.badge, { backgroundColor: si.bg }]}>
-                      <Text
-                        style={[styles.badgeText, { color: si.text }]}
-                        allowFontScaling={false}
-                        maxFontSizeMultiplier={1.2}
-                      >
-                        {si.label}
-                      </Text>
+                  <LinearGradient
+                    colors={G.heroDark}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.hero}
+                  >
+                    <View style={styles.heroGlow} pointerEvents="none" />
+                    <View style={styles.heroTopRow}>
+                      <Text style={styles.heroLabel} allowFontScaling={false}>ACTIVE SHIPMENT</Text>
+                      <View style={[styles.heroPill, { backgroundColor: si.bg }]}>
+                        <Text style={[styles.heroPillText, { color: si.text }]} allowFontScaling={false} maxFontSizeMultiplier={1.2}>
+                          {si.label}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <Text style={styles.route} allowFontScaling={false}>
-                    {primary.origin_country} → {primary.destination_country}
-                  </Text>
-                  <AnimatedDivider />
-                  <Text style={styles.stageBold} allowFontScaling={false}>{si.stage}</Text>
-                  <Text style={[styles.detail, { marginTop: 4 }]} allowFontScaling={false}>
-                    {[primary.slot_name, primary.slot_tag].filter(Boolean).join(' · ') || '—'}
-                  </Text>
+                    <Text style={styles.heroRoute} allowFontScaling={false}>
+                      {primary.origin_country} → {primary.destination_country}
+                    </Text>
+                    <Text style={styles.heroStage} allowFontScaling={false}>{eta}</Text>
+
+                    {/* 4-segment progress bar */}
+                    <View style={styles.heroProgress}>
+                      {[0, 1, 2, 3].map(i => (
+                        <View key={i} style={[styles.heroSeg, i < filled ? styles.heroSegFilled : styles.heroSegEmpty]} />
+                      ))}
+                    </View>
+
+                    <Text style={styles.heroMeta} allowFontScaling={false}>
+                      {[primary.slot_name, primary.slot_tag].filter(Boolean).join(' · ') || `Shipment ${shipmentRef(primary.id)}`}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               );
             })()}
@@ -302,9 +403,9 @@ export default function DashboardScreen({ navigation }: Props) {
             })()}
           </>
         ) : (
-          /* ── EMPTY STATE ─────────────────────────────────────────────── */
+          /* ── EMPTY STATE — friendly welcome + how-it-works ─────────────── */
           <View style={styles.emptyCard}>
-            <Svg width={40} height={40} viewBox="0 0 24 24" fill="none">
+            <Svg width={36} height={36} viewBox="0 0 24 24" fill="none">
               <Path
                 d="M20.91 8.84L12 4 3.09 8.84M12 4v16M20.91 8.84L12 20M3.09 8.84L12 20"
                 stroke="#D4D2CC"
@@ -320,22 +421,41 @@ export default function DashboardScreen({ navigation }: Props) {
                 strokeLinejoin="round"
               />
             </Svg>
-            <Text style={styles.emptyTitle} allowFontScaling={false}>Start your first shipment</Text>
-            <Text style={styles.emptySubtitle} allowFontScaling={false}>Create your first shipment to get started</Text>
+            <Text style={styles.emptyTitle} allowFontScaling={false}>Welcome to Circuit 41</Text>
+            <Text style={styles.emptySubtitle} allowFontScaling={false}>
+              Ship your goods from overseas to your door. Here's how it works:
+            </Text>
+
+            <View style={styles.stepsWrap}>
+              {[
+                'Start a shipment',
+                'Add parcel & tracking details',
+                'Send your goods to the warehouse',
+                'Track every update inside Circuit 41',
+              ].map((label, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={styles.stepNum}>
+                    <Text style={styles.stepNumText} allowFontScaling={false}>{i + 1}</Text>
+                  </View>
+                  <Text style={styles.stepText} allowFontScaling={false}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
             <TouchableOpacity
               style={styles.emptyButton}
               activeOpacity={0.85}
               onPress={() => navigation.navigate('ShippingRoute')}
             >
-              <Text style={styles.emptyButtonText} allowFontScaling={false}>Start Shipment</Text>
+              <Text style={styles.emptyButtonText} allowFontScaling={false}>Start your first shipment</Text>
             </TouchableOpacity>
           </View>
         )}
 
       </View>
 
-      {/* ── RECENT ACTIVITY — fills all remaining vertical space ─────────── */}
-      <View style={[styles.activityCard, { flex: 1, marginHorizontal: 20, marginTop: 12, marginBottom: 80 }]}>
+      {/* ── RECENT ACTIVITY — floats clear of the bottom nav ─────────────── */}
+      <View style={[styles.activityCard, { flex: 1, marginHorizontal: 20, marginTop: 16, marginBottom: 96 + insets.bottom }]}>
         <Text style={styles.activityLabel} allowFontScaling={false}>RECENT ACTIVITY</Text>
         {initialLoading ? (
           <View style={styles.activityEmptyRow}>
@@ -381,21 +501,23 @@ export default function DashboardScreen({ navigation }: Props) {
           </ScrollView>
         ) : (
           <View style={styles.activityEmptyRow}>
-            <Text style={styles.activityEmptyText} allowFontScaling={false}>No activity yet</Text>
+            <Text style={styles.activityEmptyText} allowFontScaling={false}>No activity recorded yet</Text>
           </View>
         )}
       </View>
 
-      {/* ── PINNED START NEW SHIPMENT BUTTON — always visible above nav bar ─── */}
-      <View style={[styles.ctaWrap, { bottom: 90 + insets.bottom }]}>
-        <TouchableOpacity
-          style={styles.ctaButton}
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('ShippingRoute')}
-        >
-          <Text style={styles.ctaText} allowFontScaling={false}>Start New Shipment</Text>
-        </TouchableOpacity>
-      </View>
+    </Animated.View>
+
+      {/* ── FLOATING "+" — true FAB: fixed to the screen, never moves with the
+          gesture surface or scroll. ─────────────────────────────────────── */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: 92 + insets.bottom }]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('ShippingRoute')}
+        accessibilityLabel="Start a new shipment"
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </TouchableOpacity>
 
     </View>
   );
@@ -407,14 +529,30 @@ const styles = StyleSheet.create({
   // ── Header ──────────────────────────────────────────────────────────────────
   header: {
     flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'flex-start',
+    alignItems:     'center',
+    gap:            12,
     marginBottom:   20,
   },
-  greeting: {
+  avatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: '#2C2820',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: {
     fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize:   22,
+    fontSize: 18,
+    color: '#E0875F',
+  },
+  greeting: {
+    fontFamily: 'PlusJakartaSans_500Medium',
+    fontSize:   14,
+    color:      DS.textSecondary,
+  },
+  nameText: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize:   26,
     color:      DS.textPrimary,
+    letterSpacing: -0.4,
   },
   subGreeting: {
     fontFamily: 'PlusJakartaSans_400Regular',
@@ -447,11 +585,9 @@ const styles = StyleSheet.create({
     marginBottom:    12,
   },
 
-  // ── Shared card base ─────────────────────────────────────────────────────────
+  // ── Shared card base (borderless, soft elevation) ────────────────────────────
   card: {
     backgroundColor: DS.card,
-    borderWidth:     1,
-    borderColor:     DS.border,
     borderRadius:    18,
     padding:         18,
     ...SH.card,
@@ -558,13 +694,42 @@ const styles = StyleSheet.create({
     textAlign:  'center',
     marginTop:  6,
   },
+  stepsWrap: {
+    alignSelf:  'stretch',
+    marginTop:  18,
+    gap:        12,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           12,
+  },
+  stepNum: {
+    width:           24,
+    height:          24,
+    borderRadius:    12,
+    backgroundColor: 'rgba(205,100,61,0.10)',
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  stepNumText: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize:   12,
+    color:      DS.accent,
+  },
+  stepText: {
+    flex:       1,
+    fontFamily: 'PlusJakartaSans_500Medium',
+    fontSize:   13,
+    color:      DS.textPrimary,
+  },
   emptyButton: {
-    backgroundColor: '#C10F1D',
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     paddingVertical: 12,
     width:           '100%',
     alignItems:      'center',
-    marginTop:       20,
+    marginTop:       22,
   },
   emptyButtonText: {
     fontFamily: 'PlusJakartaSans_700Bold',
@@ -635,22 +800,62 @@ const styles = StyleSheet.create({
   },
 
   // ── Pinned CTA button — absolute above tab bar ────────────────────────────────
-  ctaWrap: {
+  // ── Dark gradient hero ───────────────────────────────────────────────────────
+  heroWrap: {
+    marginTop: 16,
+    borderRadius: 26,
+    shadowColor: '#140F08', shadowOpacity: 0.30, shadowRadius: 26, shadowOffset: { width: 0, height: 16 }, elevation: 8,
+  },
+  hero: {
+    borderRadius: 26,
+    padding: 20,
+    overflow: 'hidden',
+  },
+  heroGlow: {
     position: 'absolute',
-    left:     20,
-    right:    20,
-    zIndex:   100,
+    top: -50, right: -40,
+    width: 180, height: 180, borderRadius: 90,
+    backgroundColor: 'rgba(205,100,61,0.20)',
   },
-  ctaButton: {
-    backgroundColor: '#9B1C1C',
-    borderRadius:    14,
-    paddingVertical: 15,
-    alignItems:      'center',
+  heroTopRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  ctaText: {
-    fontFamily:    'PlusJakartaSans_700Bold',
-    fontSize:      14,
-    color:         '#FFFFFF',
-    letterSpacing: 0.5,
+  heroLabel: {
+    fontFamily: 'PlusJakartaSans_700Bold', fontSize: 10.5, letterSpacing: 1.4,
+    color: '#A39C8F',
+  },
+  heroPill: { borderRadius: 999, paddingVertical: 4, paddingHorizontal: 11 },
+  heroPillText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 11 },
+  heroRoute: {
+    fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 18, color: '#F3EFE7', marginTop: 18,
+  },
+  heroStage: {
+    fontFamily: 'PlusJakartaSans_700Bold', fontSize: 27, color: '#FFFFFF', marginTop: 6, letterSpacing: -0.6,
+  },
+  heroProgress: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 18,
+  },
+  heroSeg: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+  },
+  heroSegFilled: { backgroundColor: '#CD643D' },
+  heroSegEmpty:  { backgroundColor: '#423D35' },
+  heroMeta: {
+    fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12.5, color: '#938C7F', marginTop: 14,
+  },
+
+  // ── Floating "+" FAB ─────────────────────────────────────────────────────────
+  fab: {
+    position: 'absolute',
+    right: 22,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#1A1712',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#140F08', shadowOpacity: 0.28, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 10,
+    zIndex: 100,
   },
 });

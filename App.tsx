@@ -11,12 +11,13 @@ import type { NavigatorScreenParams, CompositeScreenProps } from '@react-navigat
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { Svg, Path, Circle } from 'react-native-svg';
+import { Svg, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { colors as C, font as F, shadow as SH } from './lib/theme';
+import CustomTabBar from './components/CustomTabBar';
 import type { Slot } from './lib/database.types';
 import { configureGoogleSignIn } from './lib/googleAuth';
 import { supabase } from './lib/supabase';
@@ -48,7 +49,7 @@ export type TabParamList = {
   Home:      { isNewUser?: boolean } | undefined;
   Shipments: undefined;
   Actions:   undefined;
-  Profile:   undefined;
+  Activity:  undefined;
 };
 
 // ─── Stack param list — non-tab screens only ──────────────────────────────────
@@ -61,7 +62,7 @@ export type RootStackParamList = {
   MainTabs:          NavigatorScreenParams<TabParamList> | undefined;
   ShipmentDetail:    { shipmentId: string; isCompleted?: boolean };
   ShipmentSupport:   { shipmentId: string };
-  Activity:          undefined;
+  Profile:           undefined;
   ShippingRoute:     undefined;
   SlotSelection:     { origin: string; destination: string };
   ShipmentWorkspace: { slot?: Slot; origin?: string; destination?: string; shipmentId?: string; source?: 'home' | 'shipments' | 'creation' };
@@ -94,19 +95,40 @@ export const ActionBadgeContext = createContext<ActionBadgeContextValue>({
 });
 
 // ─── Loading screen — shown while Supabase restores the session ───────────────
+// Circuit 41 launch identity: large, zoomed-in flowing accent-family waves
+// (logistics / movement feel) behind a centred logo. JS + SVG only — no spinner,
+// no native deps. Waves are kept tasteful via low opacity so the logo stays clear.
 const LoadingScreen: React.FC = () => (
   <View style={{
     flex: 1,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#F5F9F6',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 60,
   }}>
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 400 800"
+      preserveAspectRatio="xMidYMid slice"
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      pointerEvents="none"
+    >
+      {/* Top flowing cluster */}
+      <Path d="M-60 110 C 80 30, 230 200, 470 70"  stroke="#9A3B1C" strokeWidth={12} strokeLinecap="round" fill="none" opacity={0.10} />
+      <Path d="M-60 165 C 90 80, 220 250, 470 130" stroke="#CD643D" strokeWidth={22} strokeLinecap="round" fill="none" opacity={0.16} />
+      <Path d="M-60 225 C 110 140, 240 320, 470 195" stroke="#E0875F" strokeWidth={30} strokeLinecap="round" fill="none" opacity={0.20} />
+      {/* Bottom flowing cluster */}
+      <Path d="M-60 600 C 120 700, 250 520, 470 650" stroke="#E0875F" strokeWidth={30} strokeLinecap="round" fill="none" opacity={0.20} />
+      <Path d="M-60 665 C 110 760, 250 560, 470 710" stroke="#CD643D" strokeWidth={22} strokeLinecap="round" fill="none" opacity={0.16} />
+      <Path d="M-60 735 C 100 820, 260 620, 470 775" stroke="#F2B79B" strokeWidth={14} strokeLinecap="round" fill="none" opacity={0.45} />
+    </Svg>
+
     <Image
       source={require('./assets/images/circuit40s icon.png')}
-      style={{ width: 80, height: 80 }}
+      style={{ width: 96, height: 96 }}
       resizeMode="contain"
     />
+
     <View style={{
       position: 'absolute',
       bottom: 48,
@@ -114,7 +136,7 @@ const LoadingScreen: React.FC = () => (
     }}>
       <Image
         source={require('./assets/images/circuit 40s wordmark.png')}
-        style={{ width: 120, height: 32 }}
+        style={{ width: 124, height: 34 }}
         resizeMode="contain"
       />
     </View>
@@ -159,6 +181,7 @@ function TabNavigator() {
     <ActionBadgeContext.Provider value={{ refreshActionBadge, setHasIncompleteActions }}>
       <Tab.Navigator
       initialRouteName="Home"
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         // Monzo-style floating, rounded, light bottom nav.
@@ -248,15 +271,29 @@ function TabNavigator() {
         }}
       />
 
-      {/* Profile */}
+      {/* Activity */}
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Activity"
+        component={ActivityScreen}
         options={{
           tabBarIcon: ({ color }) => (
             <Svg width={24} height={24} viewBox="0 0 24 24">
-              <Circle cx="12" cy="8" r="4" fill={color} />
-              <Path d="M4 20c0-3.31 3.58-6 8-6s8 2.69 8 6" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+              <Path
+                d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"
+                fill="none"
+                stroke={color}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <Path
+                d="M13.73 21a2 2 0 01-3.46 0"
+                fill="none"
+                stroke={color}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </Svg>
           ),
         }}
@@ -291,7 +328,7 @@ function RootNavigator() {
       {/* ── Detail / flow screens ──────────────────────────────────────────── */}
       <Stack.Screen name="ShipmentDetail" component={ShipmentDetailScreen} />
       <Stack.Screen name="ShipmentSupport" component={ShipmentSupportScreen} />
-      <Stack.Screen name="Activity"       component={ActivityScreen} />
+      <Stack.Screen name="Profile"        component={ProfileScreen} />
 
       {/* ── Shipment creation flow ─────────────────────────────────────────── */}
       <Stack.Screen name="ShippingRoute"     component={ShippingRouteScreen} />
@@ -315,7 +352,7 @@ export default function App() {
 
   return (
     <StripeProvider
-      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+      publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ''}
       merchantIdentifier="merchant.com.circuit40s.circuit41app"
     >
       <AuthProvider>

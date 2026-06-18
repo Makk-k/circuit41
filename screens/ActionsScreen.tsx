@@ -22,18 +22,19 @@ import { ActionBadgeContext, TabScreenProps } from '../App';
 import ActionBottomSheet, { ActionType } from '../components/ActionBottomSheet';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { shadow as SH } from '../lib/theme';
 import type { Action } from '../lib/database.types';
 
 type Props = TabScreenProps<'Actions'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
-  accent:       '#C10F1D',
-  border:       '#E2E0DA',
+  accent:       '#CD643D',
+  border:       '#E8E6DF',
 } as const;
 
 type DueStyle = 'urgent' | 'upcoming' | 'neutral';
@@ -203,6 +204,12 @@ export default function ActionsScreen() {
                 activeOpacity={0.85}
                 onPress={() => openSheet(action)}
               >
+                {/* Status chip — clear pending state */}
+                <View style={styles.statusChip}>
+                  <View style={styles.statusDot} />
+                  <Text style={styles.statusChipText}>Pending</Text>
+                </View>
+
                 {/* Top row: primary title + due badge */}
                 <View style={styles.cardTopRow}>
                   <Text style={styles.cardTitle}>{action.title}</Text>
@@ -299,16 +306,33 @@ const styles = StyleSheet.create({
   scroll:        { flex: 1 },
   scrollContent: { paddingTop: 8, paddingBottom: 96 },
 
-  // Action card
+  // Action card — borderless, soft elevation
   card: {
     backgroundColor:   DS.card,
-    borderRadius:      16,
-    borderWidth:       1,
-    borderColor:       DS.border,
+    borderRadius:      18,
     padding:           16,
     paddingHorizontal: 18,
     marginBottom:      12,
     marginHorizontal:  20,
+    ...SH.card,
+  },
+  statusChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               5,
+    alignSelf:         'flex-start',
+    backgroundColor:   'rgba(205,100,61,0.10)',
+    borderRadius:      999,
+    paddingVertical:   3,
+    paddingHorizontal: 9,
+    marginBottom:      10,
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: DS.accent },
+  statusChipText: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize:   10,
+    letterSpacing: 0.3,
+    color:      '#9A3B1C',
   },
   cardTopRow: {
     flexDirection:  'row',
@@ -343,10 +367,10 @@ const styles = StyleSheet.create({
     marginTop:      12,
   },
   actionBtn: {
-    backgroundColor:   DS.accent,
-    borderRadius:      8,
-    paddingVertical:   6,
-    paddingHorizontal: 14,
+    backgroundColor:   '#1A1712',
+    borderRadius:      12,
+    paddingVertical:   9,
+    paddingHorizontal: 16,
   },
   actionBtnText: {
     fontFamily: 'PlusJakartaSans_700Bold',

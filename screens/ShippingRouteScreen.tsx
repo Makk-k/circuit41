@@ -27,23 +27,27 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ShippingRoute'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
   accentDisabled:'#E2E0DA',
 } as const;
 
 // ─── Country data ─────────────────────────────────────────────────────────────
 type Country = { flag: string; name: string };
 
-// FALLBACK — shown if Supabase fetch fails
+// Canonical country lists — these always appear in the pickers. Any extra active
+// routes found in Supabase are merged in on top of these (see fetch below).
 const FALLBACK_ORIGINS: Country[] = [
-  { flag: '🇨🇳', name: 'China'  },
-  { flag: '🇹🇷', name: 'Turkey' },
+  { flag: '🇨🇳', name: 'China'          },
+  { flag: '🇹🇷', name: 'Turkey'         },
+  { flag: '🇬🇧', name: 'United Kingdom' },
+  { flag: '🇳🇬', name: 'Nigeria'        },
+  { flag: '🇪🇸', name: 'Spain'          },
 ];
 
 const FALLBACK_DESTINATIONS: Country[] = [
@@ -51,6 +55,8 @@ const FALLBACK_DESTINATIONS: Country[] = [
   { flag: '🇳🇬', name: 'Nigeria'        },
   { flag: '🇺🇸', name: 'United States'  },
   { flag: '🇨🇦', name: 'Canada'         },
+  { flag: '🇪🇸', name: 'Spain'          },
+  { flag: '🇬🇭', name: 'Ghana'          },
 ];
 
 // Flag emoji map for country names from DB
@@ -61,6 +67,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
   'Nigeria':        '🇳🇬',
   'United States':  '🇺🇸',
   'Canada':         '🇨🇦',
+  'Spain':          '🇪🇸',
   'UAE':            '🇦🇪',
   'Ghana':          '🇬🇭',
   'Kenya':          '🇰🇪',
@@ -68,6 +75,16 @@ const COUNTRY_FLAGS: Record<string, string> = {
   'India':          '🇮🇳',
   'Pakistan':       '🇵🇰',
 };
+
+// Merge canonical countries with any extra names returned from the DB (deduped,
+// canonical order first). Guarantees the requested countries always show.
+function mergeCountries(base: Country[], names: string[]): Country[] {
+  const seen = new Set(base.map(c => c.name));
+  const extra = names
+    .filter(n => !!n && !seen.has(n))
+    .map(name => ({ name, flag: COUNTRY_FLAGS[name] ?? '🌍' }));
+  return [...base, ...extra];
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ChevronDownIcon: React.FC = () => (
@@ -78,7 +95,7 @@ const ChevronDownIcon: React.FC = () => (
 
 const CheckIcon: React.FC = () => (
   <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <Polyline points="20 6 9 17 4 12" stroke="#C10F1D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="20 6 9 17 4 12" stroke="#CD643D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -194,17 +211,12 @@ export default function ShippingRouteScreen({ navigation }: Props) {
           return;
         }
 
-        const uniqueOrigins = [...new Set(data.map(d => d.origin_country))].map(name => ({
-          name,
-          flag: COUNTRY_FLAGS[name] ?? '🌍',
-        }));
-        const uniqueDests = [...new Set(data.map(d => d.destination_country))].map(name => ({
-          name,
-          flag: COUNTRY_FLAGS[name] ?? '🌍',
-        }));
+        const originNames = [...new Set(data.map(d => d.origin_country))];
+        const destNames   = [...new Set(data.map(d => d.destination_country))];
 
-        if (uniqueOrigins.length > 0) setOriginOptions(uniqueOrigins);
-        if (uniqueDests.length > 0)   setDestOptions(uniqueDests);
+        // Always keep the canonical list visible; append any extra DB countries.
+        setOriginOptions(mergeCountries(FALLBACK_ORIGINS, originNames));
+        setDestOptions(mergeCountries(FALLBACK_DESTINATIONS, destNames));
         setFetching(false);
       });
   }, []);
@@ -330,7 +342,7 @@ const styles = StyleSheet.create({
   cancelBtnBottomText: {
     fontFamily:  'PlusJakartaSans_500Medium',
     fontSize:    14,
-    color:       '#C10F1D',
+    color:       DS.textSecondary,
     textAlign:   'center',
   },
 
@@ -368,7 +380,7 @@ const styles = StyleSheet.create({
 
   // CTA button
   ctaButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     padding:         15,
     alignItems:      'center',

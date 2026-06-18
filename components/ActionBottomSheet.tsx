@@ -49,11 +49,11 @@ type Props = {
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
-  accent:       '#C10F1D',
+  accent:       '#CD643D',
   border:       '#E2E0DA',
 } as const;
 
@@ -370,7 +370,7 @@ export default function ActionBottomSheet({
                     activeOpacity={0.7}
                     onPress={Keyboard.dismiss}
                   >
-                    <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: '#C10F1D' }}>Done</Text>
+                    <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: '#CD643D' }}>Done</Text>
                   </TouchableOpacity>
                 )}
 
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
 
   // Primary submit button
   submitBtn: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    14,
     paddingVertical: 16,
     alignItems:      'center',

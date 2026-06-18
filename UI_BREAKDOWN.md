@@ -3,9 +3,24 @@ _Generated 2026-04-14. Based on full screen and component reads._
 
 ---
 
+## Action-Colour System (standardised 2026-06-15)
+
+Single source of truth: `lib/theme.ts` → `colors.primary` / `colors.accent` / `colors.danger`.
+
+| Role | Colour | Use for |
+|------|--------|---------|
+| **Primary** | Black `#1A1712` (white text) | Continue, Submit, Save, Pay, Create, Next, Confirm — the dominant action button. |
+| **Accent** | Orange `#CD643D` | **Sparingly:** selected states, active nav, small indicators, status highlights, progress, links. Never a primary-button or full-screen colour. |
+| **Danger** | Red `#DC2626` | Errors, destructive/delete, cancel-shipment, warnings **only**. |
+| **Secondary** | Neutral grey / soft fill / outline | Cancel (abort), low-emphasis actions. |
+
+The old Circuit red `#C10F1D` is **retired** — do not reintroduce it anywhere.
+
+---
+
 ## Global Design System
 
-**Background:** `#F7F6F0` (warm off-white, used on every screen)  
+**Background:** `#F5F9F6` (soft off-white, used on every screen)  
 **Card background:** `#FFFFFF`  
 **Card border:** `#E2E0DA`  
 **Primary text:** `#1A1A1A`  

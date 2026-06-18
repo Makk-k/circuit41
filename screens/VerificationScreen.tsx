@@ -37,13 +37,13 @@ const TEMP_APP_REVIEW_CODE  = '424242';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 const OTP_LENGTH   = 6;
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderColor: DS.accent,
   },
   otpBoxFocused: {
-    backgroundColor: '#FEF9F9',
+    backgroundColor: 'rgba(205,100,61,0.10)',
     borderColor:     DS.accent,
   },
 
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
 
   // Primary button
   primaryButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     paddingVertical: 14,
     alignItems:      'center',

@@ -30,13 +30,13 @@ import { supabase } from '../lib/supabase';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 // ─── Animation constants ──────────────────────────────────────────────────────
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   },
   categoryRowSelected: {
     borderColor:     DS.accent,
-    backgroundColor: '#FEF9F9',
+    backgroundColor: 'rgba(205,100,61,0.10)',
   },
   categoryRowLabel: {
     fontFamily: 'PlusJakartaSans_500Medium',
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     backgroundColor:   DS.card,
   },
   chipActive: {
-    backgroundColor: '#FEF0F0',
+    backgroundColor: 'rgba(205,100,61,0.10)',
     borderColor:     DS.accent,
   },
   chipText: {
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
   },
 
   addButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     paddingVertical: 14,
     alignItems:      'center',

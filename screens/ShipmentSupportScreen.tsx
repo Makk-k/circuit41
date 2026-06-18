@@ -32,7 +32,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ShipmentSupport'>;
 
 // C41 accent (warm) per brand — used for small emphasis only.
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   subtitle: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, color: DS.textSecondary, marginTop: 2 },
   scroll: { flex: 1 },
 
-  formCard: { backgroundColor: DS.card, borderWidth: 1, borderColor: DS.border, borderRadius: 18, padding: 16, ...SH.card },
+  formCard: { backgroundColor: DS.card, borderRadius: 18, padding: 16, ...SH.card },
   formTitle: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 15, color: DS.textPrimary, marginBottom: 12 },
   input: {
     backgroundColor: DS.bg, borderWidth: 1, borderColor: DS.border, borderRadius: 10,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     fontSize: 14, color: DS.textPrimary, marginBottom: 10,
   },
   inputMultiline: { minHeight: 80, textAlignVertical: 'top' },
-  submitBtn: { backgroundColor: DS.accent, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  submitBtn: { backgroundColor: '#1A1712', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
   submitBtnText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14, color: '#FFFFFF' },
 
   sectionLabel: {
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, color: DS.textMuted, textAlign: 'center', marginTop: 12 },
 
-  ticketCard: { backgroundColor: DS.card, borderWidth: 1, borderColor: DS.border, borderRadius: 16, marginBottom: 10, overflow: 'hidden', ...SH.card },
+  ticketCard: { backgroundColor: DS.card, borderRadius: 16, marginBottom: 10, overflow: 'hidden', ...SH.card },
   ticketHead: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   ticketSubject: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14, color: DS.textPrimary },
   ticketMeta: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 11, color: DS.textMuted, marginTop: 2 },

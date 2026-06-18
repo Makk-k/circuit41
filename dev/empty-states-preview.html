@@ -1,0 +1,113 @@
+<!doctype html>
+<!--
+  Circuit 41 — Empty-state PREVIEW (dev-only, NOT bundled into the app).
+  Safe to open in any browser. Mocks the empty states using the app's real
+  colours/copy so they can be reviewed without deleting real data.
+  Open with:  open dev/empty-states-preview.html
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Circuit 41 — Empty States Preview</title>
+<style>
+  :root{
+    --bg:#F5F9F6; --card:#FFFFFF; --text:#1A1A1A; --sub:#6B6B6B; --muted:#A0A0A0;
+    --accent:#CD643D; --accentSoft:rgba(205,100,61,0.10); --black:#1A1712; --border:#E2E0DA;
+  }
+  *{box-sizing:border-box;font-family:-apple-system,"Plus Jakarta Sans",Segoe UI,Roboto,sans-serif;}
+  body{margin:0;background:#E9EEEA;padding:32px;color:var(--text);}
+  h1{font-size:18px;margin:0 0 4px;}
+  p.note{color:var(--sub);font-size:13px;margin:0 0 24px;}
+  .grid{display:flex;gap:24px;flex-wrap:wrap;}
+  .phone{width:300px;background:var(--bg);border-radius:36px;padding:18px 16px 90px;
+    box-shadow:0 12px 40px rgba(0,0,0,.12);position:relative;border:1px solid #d7ded8;min-height:600px;}
+  .cap{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--sub);font-weight:600;margin:0 0 12px;}
+  .greet{font-size:14px;color:var(--sub);}
+  .name{font-size:24px;font-weight:700;margin-bottom:16px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;}
+  .icon{width:36px;height:36px;border:1.5px solid #D4D2CC;border-radius:8px;margin:0 auto 12px;
+    display:flex;align-items:center;justify-content:center;color:#D4D2CC;}
+  .title{font-weight:700;font-size:15px;text-align:center;}
+  .subtitle{font-size:13px;color:var(--sub);text-align:center;margin-top:6px;}
+  .steps{margin-top:18px;display:flex;flex-direction:column;gap:12px;}
+  .step{display:flex;align-items:center;gap:12px;}
+  .num{width:24px;height:24px;border-radius:12px;background:var(--accentSoft);color:var(--accent);
+    font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .stext{font-size:13px;font-weight:500;}
+  .btn{background:var(--black);color:#fff;border-radius:12px;padding:12px;text-align:center;
+    font-weight:700;font-size:13px;margin-top:22px;}
+  .center-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding-top:120px;}
+  .circle{width:56px;height:56px;border-radius:28px;background:#EFF6F1;display:flex;align-items:center;
+    justify-content:center;color:#22C55E;font-size:24px;margin-bottom:14px;}
+  .empty-title{font-weight:700;font-size:16px;}
+  .empty-sub{font-size:13px;color:var(--sub);margin-top:4px;}
+  .tabbar{position:absolute;left:16px;right:16px;bottom:16px;height:60px;background:rgba(255,255,255,.85);
+    border:1px solid var(--border);border-radius:28px;display:flex;align-items:center;justify-content:space-around;
+    font-size:10px;color:#9A968D;box-shadow:0 8px 22px rgba(40,56,79,.12);}
+  .tab.active{color:var(--accent);font-weight:600;}
+  .secLabel{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--sub);font-weight:600;margin:16px 0 8px;}
+  .pill{display:inline-block;background:#F0EEE8;color:var(--sub);border-radius:10px;padding:10px 14px;font-size:13px;}
+</style>
+</head>
+<body>
+  <h1>Circuit 41 — Empty States (preview)</h1>
+  <p class="note">Dev-only mock. Real colours &amp; copy from the app. Not bundled, no data touched.</p>
+
+  <div class="grid">
+
+    <!-- 1. DASHBOARD — no shipments (UPDATED this pass) -->
+    <div class="phone">
+      <div class="greet">Good afternoon</div>
+      <div class="name">Abdulkareem</div>
+      <div class="card">
+        <div class="icon">◇</div>
+        <div class="title">Welcome to Circuit 41</div>
+        <div class="subtitle">Ship your goods from overseas to your door. Here's how it works:</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><div class="stext">Start a shipment</div></div>
+          <div class="step"><div class="num">2</div><div class="stext">Add parcel &amp; tracking details</div></div>
+          <div class="step"><div class="num">3</div><div class="stext">Send your goods to the warehouse</div></div>
+          <div class="step"><div class="num">4</div><div class="stext">Track every update inside Circuit 41</div></div>
+        </div>
+        <div class="btn">Start your first shipment</div>
+      </div>
+      <div class="secLabel">Recent activity</div>
+      <span class="pill">No activity recorded yet</span>
+      <div class="tabbar"><span class="tab active">Home</span><span class="tab">Shipments</span><span class="tab">Actions</span><span class="tab">Activity</span></div>
+    </div>
+
+    <!-- 2. SHIPMENTS — none -->
+    <div class="phone">
+      <div class="name" style="margin-top:8px">Shipments</div>
+      <div class="secLabel">Active</div>
+      <div class="card" style="text-align:center;color:var(--sub);font-size:13px;">No active shipments</div>
+      <div class="secLabel">Completed</div>
+      <div class="card" style="text-align:center;color:var(--sub);font-size:13px;">No completed shipments</div>
+      <div class="tabbar"><span class="tab">Home</span><span class="tab active">Shipments</span><span class="tab">Actions</span><span class="tab">Activity</span></div>
+    </div>
+
+    <!-- 3. ACTIONS — none -->
+    <div class="phone">
+      <div class="name" style="margin-top:8px">Actions</div>
+      <div class="center-empty">
+        <div class="circle">✓</div>
+        <div class="empty-title">All caught up</div>
+        <div class="empty-sub">No actions needed right now</div>
+      </div>
+      <div class="tabbar"><span class="tab">Home</span><span class="tab">Shipments</span><span class="tab active">Actions</span><span class="tab">Activity</span></div>
+    </div>
+
+    <!-- 4. ACTIVITY — none -->
+    <div class="phone">
+      <div class="name" style="margin-top:8px">Activity</div>
+      <div class="center-empty">
+        <div class="empty-sub" style="font-size:14px;">No activity recorded yet</div>
+      </div>
+      <div class="tabbar"><span class="tab">Home</span><span class="tab">Shipments</span><span class="tab">Actions</span><span class="tab active">Activity</span></div>
+    </div>
+
+  </div>
+</body>
+</html>

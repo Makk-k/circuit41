@@ -26,13 +26,13 @@ import { useAuth } from '../context/AuthContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'SavedCards'>;
 
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 export default function SavedCardsScreen({ navigation }: Props) {
@@ -228,7 +228,7 @@ export default function SavedCardsScreen({ navigation }: Props) {
                         <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                           <Path
                             d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                            stroke="#EF4444"
+                            stroke="#DC2626"
                             strokeWidth="1.8"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
 
   saveButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     paddingVertical: 14,
     alignItems:      'center',

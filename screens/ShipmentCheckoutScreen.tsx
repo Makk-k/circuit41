@@ -39,13 +39,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ShipmentCheckout'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 // ─── Payment method definitions ───────────────────────────────────────────────
@@ -126,10 +126,10 @@ const GoogleIcon: React.FC = () => (
 );
 
 // ─── Card icon SVG ────────────────────────────────────────────────────────────
-const CardIcon: React.FC = () => (
+const CardIcon: React.FC<{ color?: string }> = ({ color = '#6B6B6B' }) => (
   <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <Rect x="2" y="5" width="20" height="14" rx="2" stroke="#6B6B6B" strokeWidth="1.5" />
-    <Path d="M2 10h20" stroke="#6B6B6B" strokeWidth="1.5" />
+    <Rect x="2" y="5" width="20" height="14" rx="2" stroke={color} strokeWidth="1.5" />
+    <Path d="M2 10h20" stroke={color} strokeWidth="1.5" />
   </Svg>
 );
 
@@ -148,9 +148,9 @@ const UploadIcon: React.FC = () => (
 );
 
 // ─── Bank icon SVG ────────────────────────────────────────────────────────────
-const BankIcon: React.FC = () => (
+const BankIcon: React.FC<{ color?: string }> = ({ color = '#6B6B6B' }) => (
   <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <Path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M8 10v11M12 10v11M16 10v11M20 10v11" stroke="#6B6B6B" strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M8 10v11M12 10v11M16 10v11M20 10v11" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
 );
 
@@ -732,7 +732,7 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
 
       } else if (paymentMethod === 'google_pay') {
         // Native Google Pay sheet — no generic PaymentSheet
-        const supported = await isPlatformPaySupported({ googlePay: { testEnv: true } });
+        const supported = await isPlatformPaySupported({ googlePay: { testEnv: __DEV__ } });
         if (!supported) {
           Alert.alert('Google Pay unavailable', 'Google Pay is not available on this device or build.');
           return;
@@ -741,7 +741,7 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
           googlePay: {
             merchantCountryCode: 'GB',
             currencyCode:        'GBP',
-            testEnv:             true,
+            testEnv:             __DEV__,
             merchantName:        'Circuit 40s',
           },
         });
@@ -1067,8 +1067,8 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
           activeOpacity={0.8}
           onPress={() => setPaymentMethod('card')}
         >
-          <CardIcon />
-          <Text style={styles.paymentLabel}>Pay by card</Text>
+          <CardIcon color={paymentMethod === 'card' ? '#FFFFFF' : '#6B6B6B'} />
+          <Text style={[styles.paymentLabel, paymentMethod === 'card' && styles.paymentLabelOn]}>Pay by card</Text>
           {paymentMethod === 'card' && (
             <View style={styles.selectedDot} />
           )}
@@ -1076,7 +1076,7 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
 
         {/* Saved cards — shown when card is selected */}
         {paymentMethod === 'card' && (
-          <View style={{ backgroundColor: '#F7F6F0', borderRadius: 12, padding: 14, marginTop: 8, marginBottom: 8 }}>
+          <View style={{ backgroundColor: '#F5F9F6', borderRadius: 12, padding: 14, marginTop: 8, marginBottom: 8 }}>
             {savedCards.length === 0 ? (
               <Text style={{ fontSize: 13, color: '#A0A0A0', marginBottom: 12 }}>
                 No saved cards yet
@@ -1105,8 +1105,8 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
                   <View style={{
                     width: 18, height: 18, borderRadius: 9,
                     borderWidth: 1.5,
-                    borderColor: selectedCardId === card.id ? '#C10F1D' : '#D4D2CC',
-                    backgroundColor: selectedCardId === card.id ? '#C10F1D' : 'transparent',
+                    borderColor: selectedCardId === card.id ? '#CD643D' : '#D4D2CC',
+                    backgroundColor: selectedCardId === card.id ? '#CD643D' : 'transparent',
                   }} />
                 </TouchableOpacity>
               ))
@@ -1116,7 +1116,7 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
               style={{ marginTop: 12 }}
               onPress={() => navigation.navigate('SavedCards')}
             >
-              <Text style={{ fontSize: 13, color: '#C10F1D', fontWeight: '600' }}>
+              <Text style={{ fontSize: 13, color: '#CD643D', fontWeight: '600' }}>
                 + Add new card
               </Text>
             </TouchableOpacity>
@@ -1132,8 +1132,8 @@ export default function ShipmentCheckoutScreen({ navigation, route }: Props) {
           activeOpacity={0.8}
           onPress={() => setPaymentMethod('bank')}
         >
-          <BankIcon />
-          <Text style={styles.paymentLabel}>Bank transfer</Text>
+          <BankIcon color={paymentMethod === 'bank' ? '#FFFFFF' : '#6B6B6B'} />
+          <Text style={[styles.paymentLabel, paymentMethod === 'bank' && styles.paymentLabelOn]}>Bank transfer</Text>
           {paymentMethod === 'bank' && (
             <View style={styles.selectedDot} />
           )}
@@ -1331,17 +1331,17 @@ const bankRowStyles = StyleSheet.create({
   },
   bordered: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0EEE8',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   label: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize:   13,
-    color:      '#6B6B6B',
+    color:      'rgba(255,255,255,0.60)',
   },
   value: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize:   13,
-    color:      '#1A1A1A',
+    color:      '#FFFFFF',
   },
 });
 
@@ -1445,7 +1445,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#F5F9F6',
   },
   pickupOption: {
     flexDirection: 'row',
@@ -1455,7 +1455,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     gap: 12,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#F5F9F6',
   },
   pickupOptionSelected: {
     borderColor: DS.accent,
@@ -1493,7 +1493,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 8,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#F5F9F6',
   },
   pickupCopyText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
@@ -1667,17 +1667,16 @@ const styles = StyleSheet.create({
     flexDirection:   'row',
     alignItems:      'center',
     backgroundColor: DS.card,
-    borderWidth:     1,
-    borderColor:     DS.border,
-    borderRadius:    12,
+    borderRadius:    14,
     padding:         14,
     paddingHorizontal: 16,
     marginBottom:    8,
     gap:             10,
+    // borderless — depth via soft shadow
+    shadowColor: '#1A1A1A', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 1,
   },
   paymentCardSelected: {
-    borderColor: DS.accent,
-    borderWidth: 1.5,
+    backgroundColor: '#1A1712',   // dark solid selected (like the service card), no border, no blue
   },
   paymentLabel: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
@@ -1685,30 +1684,30 @@ const styles = StyleSheet.create({
     color:      DS.textPrimary,
     flex:       1,
   },
+  paymentLabelOn: {
+    color: '#FFFFFF',
+  },
   selectedDot: {
     width:           8,
     height:          8,
     borderRadius:    4,
-    backgroundColor: DS.accent,
+    backgroundColor: '#FFFFFF',
   },
 
-  // Bank details
+  // Bank details — borderless solid card
   bankDetailsCard: {
-    backgroundColor: DS.card,
-    borderWidth:     1,
-    borderColor:     DS.border,
-    borderRadius:    12,
-    padding:         14,
+    backgroundColor: '#1A1712',
+    shadowColor: '#140F08', shadowOpacity: 0.28, shadowRadius: 22, shadowOffset: { width: 0, height: 12 }, elevation: 8,
+    borderRadius:    16,
+    padding:         16,
     paddingHorizontal: 16,
     marginBottom:    8,
-    marginTop:       -4,
-    borderTopLeftRadius:  0,
-    borderTopRightRadius: 0,
+    marginTop:       8,
   },
   bankSelectorLabel: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 11,
-    color: DS.textMuted,
+    color: 'rgba(255,255,255,0.50)',
     textTransform: 'uppercase',
     marginBottom: 8,
   },
@@ -1716,22 +1715,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: DS.border,
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#231F19',
     marginBottom: 8,
   },
   bankSelectorText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 13,
-    color: DS.textPrimary,
+    color: '#FFFFFF',
   },
   bankSelectorMenu: {
-    borderWidth: 1,
-    borderColor: DS.border,
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 10,
@@ -1742,24 +1737,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 11,
     paddingHorizontal: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#231F19',
     borderBottomWidth: 1,
-    borderBottomColor: '#F0EEE8',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   bankSelectorOptionText: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 13,
-    color: DS.textPrimary,
+    color: '#FFFFFF',
   },
   bankInstructions: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12,
     lineHeight: 18,
-    color: DS.textSecondary,
+    color: 'rgba(255,255,255,0.60)',
     marginTop: 8,
   },
   transferAmountBox: {
-    backgroundColor: '#F7F6F0',
+    backgroundColor: '#231F19',
     borderRadius: 10,
     padding: 12,
     marginTop: 12,
@@ -1767,13 +1762,13 @@ const styles = StyleSheet.create({
   transferAmountLabel: {
     fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 12,
-    color: DS.textSecondary,
+    color: 'rgba(255,255,255,0.60)',
     marginBottom: 4,
   },
   transferAmountValue: {
     fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
-    color: DS.textPrimary,
+    color: '#FFFFFF',
   },
   transferErrorBox: {
     backgroundColor: '#FEF2F2',
@@ -1791,7 +1786,7 @@ const styles = StyleSheet.create({
   // Bank upload proof
   bankUploadDivider: {
     height:          1,
-    backgroundColor: '#E2E0DA',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     marginTop:       12,
     marginBottom:    12,
   },
@@ -1800,9 +1795,9 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
     gap:             8,
-    backgroundColor: '#F7F6F0',
+    backgroundColor: 'transparent',
     borderWidth:     1,
-    borderColor:     '#D4D2CC',
+    borderColor:     'rgba(255,255,255,0.28)',
     borderStyle:     'dashed',
     borderRadius:    10,
     padding:         13,
@@ -1810,7 +1805,7 @@ const styles = StyleSheet.create({
   bankUploadText: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize:   13,
-    color:      '#6B6B6B',
+    color:      'rgba(255,255,255,0.75)',
   },
   bankUploadHelper: {
     fontFamily: 'PlusJakartaSans_400Regular',
@@ -1839,7 +1834,7 @@ const styles = StyleSheet.create({
 
   // CTA
   ctaButton: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    14,
     paddingVertical: 16,
     alignItems:      'center',

@@ -4,19 +4,19 @@
     "displayName": "Circuit 41",
     "slug": "circuit41",
     "scheme": "circuit41",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/circuit40s icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F7F6F0"
+      "backgroundColor": "#F5F9F6"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.circuit40s.circuit41app",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
       "infoPlist": {
@@ -37,8 +37,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "package": "com.circuit40s.circuit41"
     },

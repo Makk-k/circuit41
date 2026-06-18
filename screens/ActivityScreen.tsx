@@ -9,8 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -18,21 +16,21 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { RootStackParamList } from '../App';
+import { TabScreenProps } from '../App';
 import { supabase } from '../lib/supabase';
 import { navigateToShipment } from '../lib/navigationHelper';
 import { useAuth } from '../context/AuthContext';
 import type { Activity } from '../lib/database.types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Activity'>;
+type Props = TabScreenProps<'Activity'>;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
-  accent:       '#C10F1D',
+  accent:       '#CD643D',
   border:       '#E2E0DA',
 } as const;
 
@@ -107,13 +105,6 @@ export default function ActivityScreen({ navigation }: Props) {
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={22} color={DS.textPrimary} />
-        </TouchableOpacity>
         <Text style={styles.title}>Activity</Text>
       </View>
 
@@ -124,12 +115,12 @@ export default function ActivityScreen({ navigation }: Props) {
         </View>
       ) : activities.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No activity yet</Text>
+          <Text style={styles.emptyText}>No activity recorded yet</Text>
         </View>
       ) : (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           showsVerticalScrollIndicator={false}
         >
           {activities.map((item, idx) => {

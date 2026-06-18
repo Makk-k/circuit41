@@ -17,6 +17,7 @@ import {
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { TabScreenProps } from '../App';
 import { supabase } from '../lib/supabase';
 import { navigateToShipment } from '../lib/navigationHelper';
@@ -29,7 +30,7 @@ type Tab = 'Active' | 'Completed';
 
 // ─── Design tokens (shared with DashboardScreen) ──────────────────────────────
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
@@ -138,31 +139,41 @@ export default function ShipmentsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
 
-      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
+      {/* ── HEADER — title + add new shipment ───────────────────────────────── */}
       <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
         <Text style={styles.title} allowFontScaling={false}>Shipments</Text>
+        <TouchableOpacity
+          style={styles.addBtn}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('ShippingRoute')}
+          accessibilityLabel="Start a new shipment"
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
 
-      {/* ── TAB SWITCHER ────────────────────────────────────────────────────── */}
-      <View style={styles.tabSwitcher}>
-        {(['Active', 'Completed'] as const).map(tab => {
-          const isActive = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tabSwitcherBtn, { borderBottomColor: isActive ? DS.accent : 'transparent' }]}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text
-                style={[styles.tabSwitcherText, { color: isActive ? DS.textPrimary : DS.textSecondary }]}
-                allowFontScaling={false}
+      {/* ── SEGMENTED CONTROL (Active / Completed) ──────────────────────────── */}
+      <View style={styles.segmentWrap}>
+        <View style={styles.segmentTrack}>
+          {(['Active', 'Completed'] as const).map(tab => {
+            const isActive = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.segment, isActive && styles.segmentActive]}
+                activeOpacity={0.8}
+                onPress={() => setActiveTab(tab)}
               >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <Text
+                  style={[styles.segmentText, { color: isActive ? '#FFFFFF' : DS.textSecondary }]}
+                  allowFontScaling={false}
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* ── CARD LIST (scrollable) ───────────────────────────────────────────── */}
@@ -316,34 +327,50 @@ const styles = StyleSheet.create({
     flexDirection:   'column',
   },
 
-  // ── Header ──────────────────────────────────────────────────────────────────
+  // ── Header — title + add button ───────────────────────────────────────────────
   header: {
     paddingHorizontal: 20,
     paddingBottom:     4,
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
   },
   title: {
     fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize:   22,
+    fontSize:   27,
     color:      DS.textPrimary,
+    letterSpacing: -0.5,
+  },
+  addBtn: {
+    width: 42, height: 42, borderRadius: 14,
+    backgroundColor: '#1A1712',
+    alignItems: 'center', justifyContent: 'center',
+    ...SH.card,
   },
 
-  // ── Tab switcher ─────────────────────────────────────────────────────────────
-  tabSwitcher: {
-    flexDirection:    'row',
-    justifyContent:   'center',
-    marginTop:        20,
-    borderBottomWidth: 1,
-    borderBottomColor: DS.border,
+  // ── Segmented control (Active / Completed) ─────────────────────────────────────
+  segmentWrap: {
+    paddingHorizontal: 20,
+    marginTop:         18,
   },
-  tabSwitcherBtn: {
-    paddingHorizontal: 24,
-    paddingBottom:    10,
-    borderBottomWidth: 2,
-    marginBottom:     -1,
+  segmentTrack: {
+    flexDirection:   'row',
+    backgroundColor: '#E9E5DC',
+    borderRadius:    12,
+    padding:         4,
+    alignSelf:       'flex-start',
   },
-  tabSwitcherText: {
+  segment: {
+    paddingVertical:   8,
+    paddingHorizontal: 20,
+    borderRadius:      9,
+  },
+  segmentActive: {
+    backgroundColor: '#1A1712',
+  },
+  segmentText: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize:   14,
+    fontSize:   13.5,
   },
 
   // ── Loading / empty ──────────────────────────────────────────────────────────
@@ -384,8 +411,6 @@ const styles = StyleSheet.create({
   },
   cardInProgress: {
     backgroundColor:   '#FFFFFF',
-    borderWidth:       1,
-    borderColor:       DS.border,
     borderRadius:      18,
     marginHorizontal:  20,
     paddingVertical:   16,
@@ -420,8 +445,6 @@ const styles = StyleSheet.create({
   // ── Active shipment card ─────────────────────────────────────────────────────
   card: {
     backgroundColor:  DS.card,
-    borderWidth:      1,
-    borderColor:      DS.border,
     borderRadius:     18,
     marginHorizontal: 20,
     marginTop:        12,
@@ -470,8 +493,6 @@ const styles = StyleSheet.create({
   // ── Completed shipment card ──────────────────────────────────────────────────
   cardCompleted: {
     backgroundColor:   DS.card,
-    borderWidth:       1,
-    borderColor:       DS.border,
     borderRadius:      18,
     marginHorizontal:  20,
     marginTop:         12,

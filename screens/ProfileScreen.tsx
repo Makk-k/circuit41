@@ -22,7 +22,8 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { TabScreenProps } from '../App';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -30,7 +31,7 @@ import { signOutFromGoogle } from '../lib/googleAuth';
 import AddressBottomSheet from '../components/AddressBottomSheet';
 import ProfileEditBottomSheet from '../components/ProfileEditBottomSheet';
 
-type Props = TabScreenProps<'Profile'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 type ProfileData = {
   first_name:      string | null;
@@ -41,11 +42,11 @@ type ProfileData = {
 };
 
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
-  accent:       '#C10F1D',
+  accent:       '#CD643D',
   border:       '#E2E0DA',
   cardBorder:   '#D4D2CC',
 } as const;
@@ -130,7 +131,7 @@ export default function ProfileScreen({ navigation }: Props) {
   const handleSignOut = async () => {
     await signOutFromGoogle();
     await signOut();
-    navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+    (navigation.getParent() ?? navigation).reset({ index: 0, routes: [{ name: 'Welcome' }] });
   };
 
   const handleDeleteAccount = () => {
@@ -203,7 +204,7 @@ export default function ProfileScreen({ navigation }: Props) {
       setShowDeleteModal(false);
       await signOutFromGoogle();
       await signOut();
-      navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+      (navigation.getParent() ?? navigation).reset({ index: 0, routes: [{ name: 'Welcome' }] });
 
     } catch {
       Alert.alert('Could not delete account', 'Something went wrong. Please try again or contact support.');
@@ -214,6 +215,16 @@ export default function ProfileScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
+
+      {/* ── Back button (Profile is no longer a tab, so it needs an explicit exit) ── */}
+      <TouchableOpacity
+        style={[styles.backBtn, { top: insets.top + 12 }]}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('MainTabs'))}
+      >
+        <Ionicons name="chevron-back" size={22} color={DS.textPrimary} />
+      </TouchableOpacity>
 
       {/* ── Avatar + name ────────────────────────────────────────────────── */}
       <View style={[styles.avatarSection, { paddingTop: insets.top + 32 }]}>
@@ -487,6 +498,17 @@ export default function ProfileScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.bg, flexDirection: 'column' },
+  backBtn: {
+    position:        'absolute',
+    left:            16,
+    zIndex:          10,
+    width:           38,
+    height:          38,
+    borderRadius:    19,
+    alignItems:      'center',
+    justifyContent:  'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
 
   // Avatar
   avatarSection: {
@@ -618,8 +640,8 @@ const styles = StyleSheet.create({
   deleteText: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize:   14,
-    color:      DS.accent,
-    opacity:    0.75,
+    color:      '#DC2626',
+    opacity:    0.9,
   },
 
   // Legal links
@@ -705,7 +727,7 @@ const styles = StyleSheet.create({
   },
   modalConfirm: {
     flex:            1,
-    backgroundColor: DS.accent,
+    backgroundColor: '#DC2626',
     borderRadius:    12,
     paddingVertical: 13,
     alignItems:      'center',

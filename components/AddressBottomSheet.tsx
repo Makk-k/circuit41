@@ -26,13 +26,13 @@ import type { SavedAddress } from '../lib/database.types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   border:        '#E2E0DA',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 const SLIDE_CLOSED    = 700;
@@ -246,7 +246,7 @@ export default function AddressBottomSheet({
                     activeOpacity={0.7}
                     onPress={Keyboard.dismiss}
                   >
-                    <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: '#C10F1D' }}>Done</Text>
+                    <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: '#CD643D' }}>Done</Text>
                   </TouchableOpacity>
                 )}
 
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
 
   // Confirm button
   confirmBtn: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    12,
     paddingVertical: 14,
     alignItems:      'center',

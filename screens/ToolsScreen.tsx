@@ -8,21 +8,17 @@ import {
   PlusJakartaSans_500Medium,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { TabScreenProps } from '../App';
-
-type Props = TabScreenProps<'Tools'>;
-
 const DS = {
-  bg:           '#F7F6F0',
+  bg:           '#F5F9F6',
   card:         '#FFFFFF',
   textPrimary:  '#1A1A1A',
   textSecondary:'#6B6B6B',
-  accent:       '#C10F1D',
+  accent:       '#CD643D',
   border:       '#E2E0DA',
   cardBorder:   '#D4D2CC',
 } as const;
 
-export default function ToolsScreen({ navigation }: Props) {
+export default function ToolsScreen() {
   const insets = useSafeAreaInsets();
 
   const [fontsLoaded] = useFonts({

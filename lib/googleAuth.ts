@@ -24,7 +24,7 @@ export const signInWithGoogle = async () => {
     );
 
     // Step 3: Sign in with Google using the HASHED nonce
-    const userInfo = await GoogleSignin.signIn({ nonce: hashedNonce });
+    const userInfo = await GoogleSignin.signIn({ nonce: hashedNonce } as any);
 
     if (!userInfo.data?.idToken) {
       throw new Error('No ID token returned from Google');

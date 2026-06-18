@@ -20,12 +20,12 @@ import { RootStackParamList } from '../App';
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyPolicy'>;
 
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
   border:        '#E2E0DA',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
 } as const;
 
 const BackChevron: React.FC = () => (

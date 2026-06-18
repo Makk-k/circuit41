@@ -39,12 +39,12 @@ const CATEGORIES = [
 ];
 
 const DS = {
-  bg:            '#F7F6F0',
+  bg:            '#F5F9F6',
   card:          '#FFFFFF',
   textPrimary:   '#1A1A1A',
   textSecondary: '#6B6B6B',
   textMuted:     '#A0A0A0',
-  accent:        '#C10F1D',
+  accent:        '#CD643D',
   border:        '#E2E0DA',
 } as const;
 
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   },
 
   submitBtn: {
-    backgroundColor: DS.accent,
+    backgroundColor: '#1A1712',
     borderRadius:    14,
     paddingVertical: 16,
     alignItems:      'center',
